@@ -37,7 +37,6 @@ from utils import Config, set_seed
 
 
 def main():
-
     parser = argparse.ArgumentParser(description="coconut")
     parser.add_argument("config_file")
     args = parser.parse_args()
@@ -146,15 +145,20 @@ def main():
         # if we need new tokens, initialize their embeddings and lm heads
         model.resize_token_embeddings(len(tokenizer))
         embeddings = model.get_input_embeddings()
+        output_embeddings = model.get_output_embeddings()
+
         target_id = tokenizer.convert_tokens_to_ids("<<")
+        target_embedding = embeddings.weight.data[target_id]
+        target_output = output_embeddings.weight.data[target_id]
+
         # initialize the new token embeddings with a known token
         # it helps stablize the training
         for token_id in [latent_id, start_id, end_id]:
-            target_embedding = embeddings.weight.data[target_id] 
             embeddings.weight.data[token_id] = target_embedding
             # The input embeddings and lm heads are tied in GPT2. So the code below is not necessary
-            lm_head = model.lm_head
-            lm_head.weight.data[token_id] = lm_head.weight.data[target_id]
+            # lm_head = model.lm_head
+            # lm_head.weight.data[token_id] = lm_head.weight.data[target_id]
+            output_embeddings.weight.data[token_id] = target_output
 
     if configs.no_thoughts:
         configs.c_thought = 0
@@ -240,7 +244,6 @@ def main():
     collator = MyCollator(tokenizer, latent_id=latent_id, label_pad_token_id=-100)
 
     for epoch in range(configs.resume, configs.num_epochs):
-
         scheduled_stage = (
             0 if (configs.cot or configs.no_cot) else epoch // configs.epochs_per_stage
         )
@@ -264,7 +267,6 @@ def main():
         )
 
         if not configs.only_eval:
-
             dataset_train = get_cot_latent_dataset(
                 scheduled_stage,
                 base_dataset_train,
@@ -323,13 +325,12 @@ def main():
             total_length = len(train_dataloader) // configs.gradient_accumulation_steps
             pbar = tqdm(
                 colour="blue",
-                desc=f"Training Epoch: {epoch+1}",
+                desc=f"Training Epoch: {epoch + 1}",
                 total=total_length,
                 dynamic_ncols=True,
             )
 
             for step, batch in enumerate(train_dataloader):
-
                 if step == 0 and wandb_run and rank == 0:
                     print("logging training data")
                     cur_bs = len(batch["input_ids"])
@@ -380,7 +381,7 @@ def main():
                     wandb_run.log(log_dict)
 
                 pbar.set_description(
-                    f"Training Epoch: {epoch+1}/{configs.num_epochs}, batch {step}/{len(train_dataloader)} "
+                    f"Training Epoch: {epoch + 1}/{configs.num_epochs}, batch {step}/{len(train_dataloader)} "
                     f"completed (loss: {round(float(loss.detach().float() * configs.gradient_accumulation_steps), 4)}"
                 )
             pbar.close()
@@ -409,7 +410,6 @@ def main():
             with torch.no_grad():
                 parallel_model.module.eval()
                 for step, batch in enumerate(valid_loss_dataloader):
-
                     batch = {
                         key: batch[key].to(rank) for key in batch.keys() if key != "idx"
                     }
@@ -420,7 +420,6 @@ def main():
                     total_loss += loss.item() / world_size
 
                 if wandb_run and rank == 0:
-
                     log_dict = {
                         "eval/loss": total_loss / len(valid_loss_dataloader),
                     }
@@ -498,8 +497,10 @@ def main():
         cor = cor.item()
         total = total.item()
         if rank == 0:
-            print(f"Accuracy on validation set: {cor} / {total} = {cor/total}")
-            print(f"CoT match on validation set: {cor_cot} / {total} = {cor_cot/total}")
+            print(f"Accuracy on validation set: {cor} / {total} = {cor / total}")
+            print(
+                f"CoT match on validation set: {cor_cot} / {total} = {cor_cot / total}"
+            )
         sys.stdout.flush()
 
         if wandb_run:
