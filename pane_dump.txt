@@ -1,0 +1,1772 @@
+(coconut) exouser@mlrecovery-new:~/coconut$ torchrun --nnodes 1 --nproc_per_nod
+e 1 run.py args/gsm_coconut_pythia.yaml
+Config: {'project': 'coconut', 'save_path': '/home/exouser/coconut/models/', 'n
+ame': 'gsm-coconut-pythia', 'only_eval': False, 'coconut': True, 'cot': False,
+'no_thoughts': False, 'no_cot': False, 'c_thought': 2, 'epochs_per_stage': 3, '
+max_latent_stage': 3, 'pad_latent_to_max': True, 'save_only_improve': False, 'u
+niform_prob': 0.0, 'model_id': 'EleutherAI/pythia-14m', 'load_model_path': '/ho
+me/exouser/coconut/models/gsm-cot-pythia/checkpoint_25', 'seed': 0, 'resume': 3
+, 'bf16': True, 'train_path': 'data/gsm_train.json', 'val_path': 'data/gsm_vali
+d.json', 'reset_optimizer': True, 'batch_size_training': 32, 'debug': False, 'g
+radient_accumulation_steps': 4, 'num_epochs': 25, 'lr': 0.0001, 'weight_decay':
+ 0.01}
+[rank0]:[W1107 01:38:30.506725677 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0
+ Rank 0]  using GPU 0 to perform barrier as devices used by this process are cu
+rrently unknown. This can potentially cause a hang if this rank to GPU mapping
+is incorrect.Specify device_ids in barrier() to force use of a particular devic
+e,or call init_process_group() with a device_id.
+Loading from /home/exouser/coconut/models/gsm-cot-pythia/checkpoint_25 and skip
+ the first 3 epochs
+/home/exouser/coconut/run.py:116: FutureWarning: You are using `torch.load` wit
+h `weights_only=False` (the current default value), which uses the default pick
+le module implicitly. It is possible to construct malicious pickle data which w
+ill execute arbitrary code during unpickling (See https://github.com/pytorch/py
+torch/blob/main/SECURITY.md#untrusted-models for more details). In a future rel
+ease, the default value for `weights_only` will be flipped to `True`. This limi
+ts the functions that could be executed during unpickling. Arbitrary objects wi
+ll no longer be allowed to be loaded via this mode unless they are explicitly a
+llowlisted by the user via `torch.serialization.add_safe_globals`. We recommend
+ you start setting `weights_only=True` for any use case where you don't have fu
+ll control of the loaded file. Please open an issue on GitHub for any issues re
+lated to this experimental feature.
+  saved_weights = torch.load(
+<All keys matched successfully>
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/exouser/coconut/run.py", line 533, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/exouser/coconut/run.py", line 156, in main
+[rank0]:     lm_head = model.lm_head
+[rank0]:               ^^^^^^^^^^^^^
+[rank0]:   File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch
+/nn/modules/module.py", line 1931, in __getattr__
+[rank0]:     raise AttributeError(
+[rank0]: AttributeError: 'GPTNeoXForCausalLM' object has no attribute 'lm_head'
+[rank0]:[W1107 01:38:32.683711368 ProcessGroupNCCL.cpp:1250] Warning: WARNING:
+process group has NOT been destroyed before we destruct ProcessGroupNCCL. On no
+rmal program exit, the application should call destroy_process_group to ensure
+that any pending NCCL operations have finished in this process. In rare cases t
+his process can exit before this point and block the progress of another member
+ of the process group. This constraint has always been present,  but this warni
+ng has only been added since PyTorch 2.4 (function operator())
+E1107 01:38:33.111000 153834 torch/distributed/elastic/multiprocessing/api.py:8
+69] failed (exitcode: 1) local_rank: 0 (pid: 153867) of binary: /home/exouser/c
+oconut/.venv/bin/python3
+Traceback (most recent call last):
+  File "/home/exouser/coconut/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/run.py", line 919, in main
+    run(args)
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/run.py", line 910, in run
+    elastic_launch(
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError:
+============================================================
+run.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-11-07_01:38:33
+  host      : mlrecovery-new.js2local
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 153867)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/
+errors.html
+============================================================
+(coconut) exouser@mlrecovery-new:~/coconut$ ls
+
+ AGENTS.md            LICENSE       args         data         preprocessing
+  run.py
+ CODE_OF_CONDUCT.md   README.md     assets       dataset.py  'python=3.12'
+  utils.py
+ CONTRIBUTING.md      __pycache__   coconut.py   models       requirements.txt
+  wandb
+(coconut) exouser@mlrecovery-new:~/coconut$ tmux source-file ~/.tmux.conf
+(coconut) exouser@mlrecovery-new:~/coconut$ git pull
+remote: Enumerating objects: 3, done.
+remote: Counting objects: 100% (3/3), done.
+remote: Total 3 (delta 2), reused 3 (delta 2), pack-reused 0 (from 0)
+Unpacking objects: 100% (3/3), 515 bytes | 515.00 KiB/s, done.
+From github.com:EECS498-Team14/coconut
+   27273cb..5b347da  main       -> origin/main
+Updating 27273cb..5b347da
+Fast-forward
+ run.py | 27 ++++++++++++++-------------
+ 1 file changed, 14 insertions(+), 13 deletions(-)
+(coconut) exouser@mlrecovery-new:~/coconut$ torchrun --nnodes 1 --nproc_per_nod
+e 1 run.py args/gsm_coconut_pythia.yaml
+Config: {'project': 'coconut', 'save_path': '/home/exouser/coconut/models/', 'n
+ame': 'gsm-coconut-pythia', 'only_eval': False, 'coconut': True, 'cot': False,
+'no_thoughts': False, 'no_cot': False, 'c_thought': 2, 'epochs_per_stage': 3, '
+max_latent_stage': 3, 'pad_latent_to_max': True, 'save_only_improve': False, 'u
+niform_prob': 0.0, 'model_id': 'EleutherAI/pythia-14m', 'load_model_path': '/ho
+me/exouser/coconut/models/gsm-cot-pythia/checkpoint_25', 'seed': 0, 'resume': 3
+, 'bf16': True, 'train_path': 'data/gsm_train.json', 'val_path': 'data/gsm_vali
+d.json', 'reset_optimizer': True, 'batch_size_training': 32, 'debug': False, 'g
+radient_accumulation_steps': 4, 'num_epochs': 25, 'lr': 0.0001, 'weight_decay':
+ 0.01}
+[rank0]:[W1107 01:49:24.179210117 ProcessGroupNCCL.cpp:4115] [PG ID 0 PG GUID 0
+ Rank 0]  using GPU 0 to perform barrier as devices used by this process are cu
+rrently unknown. This can potentially cause a hang if this rank to GPU mapping
+is incorrect.Specify device_ids in barrier() to force use of a particular devic
+e,or call init_process_group() with a device_id.
+Loading from /home/exouser/coconut/models/gsm-cot-pythia/checkpoint_25 and skip
+ the first 3 epochs
+/home/exouser/coconut/run.py:115: FutureWarning: You are using `torch.load` wit
+h `weights_only=False` (the current default value), which uses the default pick
+le module implicitly. It is possible to construct malicious pickle data which w
+ill execute arbitrary code during unpickling (See https://github.com/pytorch/py
+torch/blob/main/SECURITY.md#untrusted-models for more details). In a future rel
+ease, the default value for `weights_only` will be flipped to `True`. This limi
+ts the functions that could be executed during unpickling. Arbitrary objects wi
+ll no longer be allowed to be loaded via this mode unless they are explicitly a
+llowlisted by the user via `torch.serialization.add_safe_globals`. We recommend
+ you start setting `weights_only=True` for any use case where you don't have fu
+ll control of the loaded file. Please open an issue on GitHub for any issues re
+lated to this experimental feature.
+  saved_weights = torch.load(
+<All keys matched successfully>
+Running FSDP on rank = 0, world size = 1
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_init_utils.py:444: UserWarning: FSDP is switching to use `NO_SHARD` instead o
+f ShardingStrategy.FULL_SHARD since the world size is 1.
+  warnings.warn(
+FullyShardedDataParallel(
+  (_fsdp_wrapped_module): Coconut(
+    (base_causallm): GPTNeoXForCausalLM(
+      (gpt_neox): GPTNeoXModel(
+        (embed_in): Embedding(50280, 128)
+        (emb_dropout): Dropout(p=0.0, inplace=False)
+        (layers): ModuleList(
+          (0-5): 6 x GPTNeoXLayer(
+            (input_layernorm): LayerNorm((128,), eps=1e-05, elementwise_affine=
+True)
+            (post_attention_layernorm): LayerNorm((128,), eps=1e-05, elementwis
+e_affine=True)
+            (post_attention_dropout): Dropout(p=0.0, inplace=False)
+            (post_mlp_dropout): Dropout(p=0.0, inplace=False)
+            (attention): GPTNeoXSdpaAttention(
+              (rotary_emb): GPTNeoXRotaryEmbedding()
+              (query_key_value): Linear(in_features=128, out_features=384, bias
+=True)
+              (dense): Linear(in_features=128, out_features=128, bias=True)
+              (attention_dropout): Dropout(p=0.0, inplace=False)
+            )
+            (mlp): GPTNeoXMLP(
+              (dense_h_to_4h): Linear(in_features=128, out_features=512, bias=T
+rue)
+              (dense_4h_to_h): Linear(in_features=512, out_features=128, bias=T
+rue)
+              (act): GELUActivation()
+            )
+          )
+        )
+        (final_layer_norm): LayerNorm((128,), eps=1e-05, elementwise_affine=Tru
+e)
+        (rotary_emb): GPTNeoXRotaryEmbedding()
+      )
+      (embed_out): Linear(in_features=128, out_features=50280, bias=False)
+    )
+    (embedding): Embedding(50280, 128)
+  )
+)
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:01<00:00, 430.12 examples/s]
+Map (num_proc=32): 100%|█████████████████████████████████████████████████| 3856
+20/385620 [00:38<00:00, 9992.64 examples/s]
+wandb: Using wandb-core as the SDK backend.  Please refer to https://wandb.me/w
+andb-core for more information.
+wandb: Currently logged in as: jinxiayang0422 (jinxiayang0422-university-of-mic
+higan). Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.18.7
+wandb: Run data is saved locally in /home/exouser/coconut/wandb/run-20251107_01
+5015-awi1b6w4
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run gsm-coconut-pythia
+wandb: ⭐️ View project at https://wandb.ai/jinxiayang0422-university-of-michiga
+n/coconut
+wandb: 🚀 View run at https://wandb.ai/jinxiayang0422-university-of-michigan/co
+conut/runs/awi1b6w4
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+| 500/500 [00:00<00:00, 1013.61 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:08<00:00, 46794.33 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 855.83 examples/s]
+Training Epoch: 4:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+We detected that you are passing `past_key_values` as a tuple of tuples. This i
+s deprecated and will be removed in v4.47. Please convert your cache or use an
+appropriate `Cache` class (https://huggingface.co/docs/transformers/kv_cache#le
+gacy-cache-format)
+Training Epoch: 4/25, batch 12050/12051 completed (loss: 1.8984: : 3013it [3:02
+:58,  3.64s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 1.84716796875
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<(1/2)'
+Extracted Output: 'John cuts his grass to 2 inches.  It grows.5 inches per mont
+h.  When it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to
+ get his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<(1/2)'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:42,  2.24it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<.1*2=1.5>>
+<<0.2*0.2=1.5>>
+<<1.2*0.5=1.5>>
+<<1.5*0.1=1.1>>
+<<0.1+1.5+1.'
+Extracted Output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog fo
+od a day. The second dog eats twice as much while the third dog eats 2.5 cups m
+ore than the second dog. How many cups of dog food should Hannah prepare in a d
+ay for her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<.1*2=1.5>>
+<<0.2*0.2=1.5>>
+<<1.2*0.5=1.5>>
+<<1.5*0.1=1.1>>
+<<0.1+1.5+1.'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:09,  2.63it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*2=4>>
+<<1/2*2=1.2>>
+<<1*2=2>>
+<<0.2*0.2=0.1>>
+### 0.1'
+Extracted Output: '0.1'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:56,  2.82it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|end-latent|>### (1.5'
+Extracted Output: '(1.5'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:48,  2.95it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|end-latent|>### 1.'
+Extracted Output: '1.'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:40<00:00,  3.12it/s]
+Device 0: Cor=5, CoT=0, Total=500
+Accuracy on validation set: 5 / 500 = 0.01
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 994.02 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:08<00:00, 46987.15 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 761.40 examples/s]
+Training Epoch: 5:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+Training Epoch: 5/25, batch 12050/12051 completed (loss: 1.6719: : 3013it [3:02
+:35,  3.64s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 1.82080078125
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<(1*2*2*1/0.1=0.0>>
+<<0.0.0*0.0*0.1=0.0.5>>
+<<0.5*.0.0+0.1=0.5>>
+<<.0*'
+Extracted Output: 'John cuts his grass to 2 inches.  It grows.5 inches per mont
+h.  When it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to
+ get his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<(1*2*2*1/0.1=0.0>>
+<<0.0.0*0.0*0.1=0.0.5>>
+<<0.5*.0.0+0.1=0.5>>
+<<.0*'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:40,  2.26it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*0.5*2=3>>
+<<0+2*0.5+3+0.5+0.5*0.2*0.2*0.1=0.2>>
+<<0.0+0.2*0.0*0.2'
+Extracted Output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog fo
+od a day. The second dog eats twice as much while the third dog eats 2.5 cups m
+ore than the second dog. How many cups of dog food should Hannah prepare in a d
+ay for her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*0.5*2=3>>
+<<0+2*0.5+3+0.5+0.5*0.2*0.2*0.1=0.2>>
+<<0.0+0.2*0.0*0.2'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:07,  2.65it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2000*0.2/2=0.5>>
+<<0.2*0.1=0.1>>
+<<2*0.1=0.0>>
+<<.0*0.5=0.5>>
+### 0.2'
+Extracted Output: '0.2'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:56,  2.82it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|end-latent|><<3*5=11>>
+<<3*1=3>>
+<<11*0.5=0.5>>
+<<(0.2)*0.5=0.1>>
+<<0.1*0.1=0.1>>
+<<.1+0.'
+Extracted Output: 'A set of 7 spoons costs $21. If each spoon would be sold sep
+arately how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|end-latent|><<3*5=11>>
+<<3*1=3>>
+<<11*0.5=0.5>>
+<<(0.2)*0.5=0.1>>
+<<0.1*0.1=0.1>>
+<<.1+0.'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:50,  2.91it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|end-latent|><<80+20=80>>
+<<80*0.2=80>>
+### 80'
+Extracted Output: '80'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:42<00:00,  3.07it/s]
+Device 0: Cor=4, CoT=0, Total=500
+Accuracy on validation set: 4 / 500 = 0.008
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 980.31 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:09<00:00, 42537.24 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 750.16 examples/s]
+Training Epoch: 6:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+Training Epoch: 6/25, batch 12050/12051 completed (loss: 1.5781: : 3013it [3:02
+:39,  3.64s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 1.857421875
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<1*0.2=0.0>>
+<<.0*0.50=0.0>>
+<<0.0.0.0.0=0.0.0>>
+<<0.0.0.0>>
+<<.0*0.0=0.0'
+Extracted Output: 'John cuts his grass to 2 inches.  It grows.5 inches per mont
+h.  When it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to
+ get his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|end-latent|><<1*0.2=0.0>>
+<<.0*0.50=0.0>>
+<<0.0.0.0.0=0.0.0>>
+<<0.0.0.0>>
+<<.0*0.0=0.0'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:39,  2.27it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*2=4>>
+<<2*1=4>>
+<<0.4=0.2>>
+<<0.2*0.2=0.0>>
+<<0.0.5=0.5>>
+<<0.1*0.5=0.5'
+Extracted Output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog fo
+od a day. The second dog eats twice as much while the third dog eats 2.5 cups m
+ore than the second dog. How many cups of dog food should Hannah prepare in a d
+ay for her three dogs?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*2=4>>
+<<2*1=4>>
+<<0.4=0.2>>
+<<0.2*0.2=0.0>>
+<<0.0.5=0.5>>
+<<0.1*0.5=0.5'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:05,  2.68it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2000*0.0=12.0>>
+<<2*0.8=0.0>>
+<<.0*0.8=0.0>>
+<<.0*0.0.0=0.0.0.0>>
+<<0.0.0.0'
+Extracted Output: 'Travis wants to fly to Australia. The regular tickets cost a
+bout $2000. As Travis is a student he will get a 30% discount on this price. Ho
+w much does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2000*0.0=12.0>>
+<<2*0.8=0.0>>
+<<.0*0.8=0.0>>
+<<.0*0.0.0=0.0.0.0>>
+<<0.0.0.0'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:55,  2.84it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|end-latent|><<21*1=33>>
+### 33'
+Extracted Output: '33'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:47,  2.96it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*20=40>>
+<<10*0.5=0.1>>
+<<.0+0.1+0.1=0.1>>
+<<2*0.0.0=0.0>>
+<<0.0.25=0.5>>
+<<'
+Extracted Output: 'Tom bought his games for $200.  They tripled in value and he
+ then sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|end-latent|><<2*20=40>>
+<<10*0.5=0.1>>
+<<.0+0.1+0.1=0.1>>
+<<2*0.0.0=0.0>>
+<<0.0.25=0.5>>
+<<'
+Test accuracy: 0.0: 100%|██████████████████████████████████████████████████████
+█████████| 500/500 [02:41<00:00,  3.10it/s]
+Device 0: Cor=2, CoT=0, Total=500
+Accuracy on validation set: 2 / 500 = 0.004
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 969.95 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:06<00:00, 55729.82 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 794.00 examples/s]
+Training Epoch: 7:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+Training Epoch: 7/25, batch 12050/12051 completed (loss: 1.8359: : 3013it [5:44
+:52,  6.87s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 1.96240234375
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<(1/0)*1
+00*0.0)=(0.0.*0.0*0.*0*0.0(0.*0.0(0(0,0)'0)0(0.0(0.0(0)0.0.'
+Extracted Output: 'John cuts his grass to 2 inches.  It grows.5 inches per mont
+h.  When it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to
+ get his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<(1/0)*1
+00*0.0)=(0.0.*0.0*0.*0*0.0(0.*0.0(0(00)'0)0(0.0(0.0(0)0.0.'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:42,  2.25it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<1.5+0.2
+=0.0>>
+### 0.0'
+Extracted Output: '0.0'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:04,  2.70it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:51,  2.90it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 4'
+Extracted Output: '4'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:45,  3.00it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0: 100%|██████████████████████████████████████████████████████
+█████████| 500/500 [02:41<00:00,  3.10it/s]
+Device 0: Cor=0, CoT=0, Total=500
+Accuracy on validation set: 0 / 500 = 0.0
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 984.77 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:07<00:00, 54922.15 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 783.15 examples/s]
+Training Epoch: 8:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+Training Epoch: 8/25, batch 4807/12051 completed (loss: 2.2969:  40%|█████▏
+Training Epoch: 8/25, batch 4808/12051 completed (loss: 2.4375:  40%|▍| 1202/30
+TraininTraining Epoch: 8/25, batch 7255/12051 completed (loss: 2.3125:  60%|███
+██████████████████████████████▋                      | 1814/3012 [3:28:10<2:21:
+Training Epoch: 8/25, batch 7256/12051 completed (loss: 2.0469:  60%|▌| 1814/30
+
+Training Epoch: 8/25,Training Epoch: 8/25, batch 7819/12051 completed (loss: 2.
+1875:  65%|████████████████████████████████████▎                   | 1955/3012
+Training Epoch: 8/25, batch 7820/12051 completed (loss: 2.3906:  65%|▋| 1955/30
+
+Training Epoch: 8/25, batch 8685/12Training Epoch: 8/25, batch 8687/12051 compl
+eted (loss: 1.9531:  72%|████████████████████████████████████████▍
+Training Epoch: 8/25, batch 8688/12051 completed (loss: 2.125:  72%|▋| 2172/301
+
+Training Epoch: 8/25, batch 9248/12051 completed Training Epoch: 8/25, batch 92
+51/12051 completed (loss: 1.9375:  77%|████████████████████████████████████████
+Training Epoch: 8/25, batch 9252/12051 completed (loss: 2.3438:  77%|▊| 2313/30
+
+Training Epoch: 8/25, batch 12049/12051 completed (loss: 2.1406: : 3013it [5:45
+Training Epoch: 8/25, batch 12050/12051 completed (loss: 2.1719: : 3013it [5:45
+Training Epoch: 8/25, batch 12050/12051 completed (loss: 2.1719: : 3013it [5:45
+:28,  6.88s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.12353515625
+Test Accuracy:   0%|                                   | 0/500 [00:00<?, ?it/s]
+Question 0: Answer = '300' CoT = '<<4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<100+100
+=100>>
+<<1*0.1=0.1>>
+<<0.0*0.1=0.1>>
+<<0.0+0.1.1=0.0>>0.0.0.0.0.0.0.0'
+Extracted Output: 'John cuts his grass to 2 inches.  It grows.5 inches per mont
+h.  When it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to
+ get his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<100+100
+=100>>
+<<1*0.1=0.1>>
+<<0.0*0.1=0.1>>
+<<0.0+0.1.1=0.0>>0.0.0.0.0.0.0.0'
+Test accuracy: 0.0:   0%|                      | 1/500 [00:00<03:43,  2.24it/s]
+Question 1: Answer = '10' CoT = '<<1.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<1+0.1=1
+.5>>
+<<1.5*0.5=0.5>>
+<<0.5+0.5+0.5=0.5>>
+### 0.5'
+Extracted Output: '0.5'
+Test accuracy: 0.0:   0%|                      | 2/500 [00:00<03:08,  2.65it/s]
+Question 2: Answer = '1400' CoT = '<<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### (10'
+Extracted Output: '(10'
+Test accuracy: 0.0:   1%|▏                     | 3/500 [00:01<02:53,  2.86it/s]
+Question 3: Answer = '15' CoT = '<<21/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▏                     | 4/500 [00:01<02:47,  2.96it/s]
+Question 4: Answer = '240' CoT = '<<200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0: 100%|████████████████████| 500/500 [02:41<00:00,  3.10it/s]
+Device 0: Cor=0, CoT=0, Total=500
+Accuracy on validation set: 0 / 500 = 0.0
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|█████████████| 500/500 [00:00<00:00, 942.73 examples/s]
+Map (num_proc=32): 100%|█████| 385620/385620 [00:06<00:00, 55613.36 examples/s]
+Map (num_proc=32): 100%|█████████████| 500/500 [00:00<00:00, 837.99 examples/s]
+Training Epoch: 9:   0%|                              | 0/3012 [00:00<?, ?it/s]
+logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+Training Epoch: 9/25, batch 2019/12051 completed (loss: 1.8281:  17%|██████████
+██████████████▏
+                                                       | 505/3012 [57:37<4:52:4
+7,  7.0Training Epoch: 9/25, batch 2020/12051 completed (loss: 1.9688:  17%|██▋
+             | 505/3012 [57:39<4:52:47,  7.01s/it]
+
+              Training EpoTraining Epoch: 9/25, batch 7615/12051 completed (los
+s: 2.0312:  63%|███████████████████████████████████████████████████████████████
+██████████████████████████▏                                                   |
+ 1904/3012 [3:37:34<2Training Epoch: 9/25, batch 7616/12051 completed (loss: 2.
+4219:  63%|████████▏    | 1904/3012 [3:37:36<2:07:00,  6.88s/it]
+
+                            Training Epoch: 9/25, baTraining Epoch: 9/25, batch
+ 9303/12051 completed (loss: 2.0781:  77%|█████████████████████████████████████
+███████████████████████████████████████████████████████████████████████▉
+                         | 2326/301Training Epoch: 9/25, batch 9304/12051 compl
+eted (loss: 2.6719:  77%|██████████   | 2326/3012 [4:25:45<1:20:40,  7.06s/it]
+
+                                          Training Epoch: 9/25, batch 12050/120
+51 completed (loss: 1.9297: : 3013it [5:44:18,  6.86s/it]
+
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.138671875
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<0*0.5=0
+.5>>
+<<0.2*0.1=0.5>>
+### 0.5'
+Extracted Output: '0.5'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:37,  2.29it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|><<0.1*0.5
+=0.5>>
+<<.5+0.5=0.5>>
+### 0.5'
+Extracted Output: '0.5'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:05,  2.69it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:52,  2.88it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 6'
+Extracted Output: '6'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:46,  2.98it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|end-latent|>### 200'
+Extracted Output: '200'
+Test accuracy: 0.0: 100%|██████████████████████████████████████████████████████
+█████████| 500/500 [02:40<00:00,  3.11it/s]
+Device 0: Cor=1, CoT=0, Total=500
+Accuracy on validation set: 1 / 500 = 0.002
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 957.03 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:06<00:00, 56416.22 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 753.64 examples/s]
+Training Epoch: 10:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+Training Epoch: 10/25, batch 12050/12051 completed (loss: 2.0312: : 3013it [8:0
+7:09,  9.70s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.17822265625
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:34,  2.33it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|><<1*2=4>>
+<<0*0.1=0.1>>
+### 0.1'
+Extracted Output: '0.1'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:02,  2.73it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 2'
+Extracted Output: '2'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:49,  2.93it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.'
+Extracted Output: '1.'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:43,  3.03it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 10'
+Extracted Output: '10'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:38<00:00,  3.15it/s]
+Device 0: Cor=6, CoT=0, Total=500
+Accuracy on validation set: 6 / 500 = 0.012
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 977.66 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:07<00:00, 51625.29 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 759.34 examples/s]
+Training Epoch: 11:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+Training Epoch: 11/25, batch 10332/12051 completed (loss: 1.8203:  86%|████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████▉                                            | 2583/3012 [6:
+59:44<1:07:31,  9.4Training Epoch: 11/25, batch 10333/12051 completed (loss: 2.
+4688:  86%|████████████████████████████████████████████████████████████████████
+██████████████▎             | 2583/3012 [6:59:46<1:07:31,  9.44s/it]
+
+
+                                      Training Epoch: 11/25, batch 10353/12051
+completed (loss: 2.375:  86%|██████████████████████████████████████████████████
+█████████████████████████████████▎             | 2588/3012 [7:00:34<1:08:21,  9
+.67s/it]Training Epoch: 11/25, batch 10516/12051 completed (loss: 2.0156:  87%|
+██████████████████████████████████████████████████████████Training Epoch: 11/25
+, batch 10517/12051 completed (loss: 2.5938:  87%|█████████████████████████████
+███████████████████████████████████████████▍          | 2629/3012 [7:07:16<1:03
+:06,  9.89s/it]Training Epoch: 11/25, batch 10520/12051 completed (loss: 1.8438
+:  87%|████████████████████████████████████████████████████████████████████████
+▍          | 2630/3012 [7:07:23<1:03:20Training Epoch: 11/25, batch 10521/12051
+ completed (loss: 1.7734:  87%|█████████████████████████████████████▌     | 263
+0/3012 [7:07:27<1:03:20,  9.95s/it]Training Epoch: 11/25, batch 10526/12051 com
+Training Epoch: 11/25, batch 10535/12051 completed (loss: 2.3594:  87%|████████
+██████████████████████████████████▊      | Training Epoch: 11/25, batch 1Traini
+ng Epoch: 11/25, batch 11363/12051 completed (loss: 2.1719:  94%|██████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+██▋               | Training Epoch: 11/25, batch 11364/12051 completed (loss: 2
+.1719:  94%|███████████████████████████████████████████████████████████████████
+█████▋    | 2841/3012 [7:42:18<27:38,  9.70s/it]
+
+                                                                            Tra
+ining Epoch: 11/25, batch 12050/12051 completed (loss: 1.8594: : 3013it [8:10:0
+7,  9.76s/it]
+
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.11767578125
+Test Accuracy:   0%|
+
+    | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   0%|▎
+                                                                           | 1/
+500 [00:00<03:32,  2.35it/s]Question 1: Answer = '10' CoT = '<<1.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|><<0+0.2+0.2+0.0+0.2+0.2=2.1>>
+### 2.2'
+Extracted Output: '2.2'
+Test accuracy: 0.0:   0%|▌
+                                                                           | 2/
+500 [00:00<03:02,  2.73it/s]Question 2: Answer = '1400' CoT = '<<30/100*2000=60
+0>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▊
+                                                                           | 3/
+500 [00:01<02:49,  2.92it/s]Question 3: Answer = '15' CoT = '<<21/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   1%|█
+                                                                           | 4/
+500 [00:01<02:44,  3.02it/s]Question 4: Answer = '240' CoT = '<<200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████████████| 500/
+500 [02:38<00:00,  3.16it/s]
+Device 0: Cor=3, CoT=0, Total=500
+Accuracy on validation set: 3 / 500 = 0.006
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████| 500/500 [00:
+00<00:00, 983.69 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████| 385620/385620 [00:07
+<00:00, 52079.47 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█████████████████████████████████████████████████████████████████| 500/500 [00:
+00<00:00, 809.58 examples/s]
+Training Epoch: 12:   0%|
+
+   | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+Training Epoch: 12/25, batch 921/12051 completed (loss: 1.8125:   8%|██████████
+██████████▊
+
+
+                         | 230/3012 [37:31<7:37:42,  9.8Training Epoch: 12/25,
+batch 922/12051 completed (loss: 2.1562:   8%|██████
+                                               | 230/3012 [37:34<7:37:42,  9.87
+s/it]
+
+                                 Training Epoch: 12/25, batch 251Training Epoch
+: 12/25, batch 3191/12051 completed (lTraining Epoch: 12/25, batch 4983/12051 c
+ompleted (loss: 2.1094:  41%|████████████████████████████████████████▏
+                                               | 1246/3012 [3:22:28<4:41:51,  9
+.58s/itTraining Epoch: 12/25, batch 4984/12051 complet
+
+                                     Training Epoch: 12/2Training Epoch: 12/25,
+ batch 6890/12051 completed (loss: 1.875:  57%|████████████████████████████████
+████████████████████████     Training Epoch: 12/25, batch 6890/12051 completed
+(loss: 1.875:  57%|█████████████████████████████████████████████████▊
+                           | 1723/3012 [4:40:07<3:21:29,  9.38s/it]Training Epo
+ch: 12/25, batch 6891/12051 completed (loss: 1.75:  57%|███████████████████████
+███████████████████████████▎                             Training Epoch: 12/25,
+ batch 6892/12051 completed (loss: 2.0469:  57%|▌| 1723/
+                                                       Training Epoch: 12/25, b
+atch 12049/12051 completed (loss: 1.9062: : 3013it [8:Training Epoch: 12/25, ba
+tch 12050/12051 completed (loss: 2.1719: : 3013it [8:Training Epoch: 12/25, bat
+ch 12050/12051 completed (loss: 2.1719: : 3013it [8:11:05,  9.78s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.06884765625
+Test Accuracy:   0%|                                  | 0/500 [00:00<?, ?it/s]Q
+uestion 0: Answer = '300' CoT = '<<4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|                     | 1/500 [00:00<03:26,  2.42it/s]Q
+uestion 1: Answer = '10' CoT = '<<1.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|                     | 2/500 [00:00<02:57,  2.81it/s]Q
+uestion 2: Answer = '1400' CoT = '<<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 2200'
+Extracted Output: '2200'
+Test accuracy: 0.0:   1%|▏                    | 3/500 [00:01<02:47,  2.97it/s]Q
+uestion 3: Answer = '15' CoT = '<<21/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▏                    | 4/500 [00:01<02:42,  3.06it/s]Q
+uestion 4: Answer = '240' CoT = '<<200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.01: 100%|██████████████████| 500/500 [02:39<00:00,  3.14it/s]
+Device 0: Cor=5, CoT=0, Total=500
+Accuracy on validation set: 5 / 500 = 0.01
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|████████████| 500/500 [00:00<00:00, 948.06 examples/s]
+Map (num_proc=32): 100%|████| 385620/385620 [00:07<00:00, 49504.20 examples/s]
+Map (num_proc=32): 100%|████████████| 500/500 [00:00<00:00, 747.25 examples/s]
+Training Epoch: 13:   0%|                            | 0/3012 [00:00<?, ?it/s]l
+ogging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 13/25, batch 12050/12051 completed (loss: 2.375: : 3013it [6:36
+:20,  7.89s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.23291015625
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:28,  2.39it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<02:59,  2.78it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.'
+Extracted Output: '1.'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:49,  2.94it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:44,  3.02it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.'
+Extracted Output: '1.'
+Test accuracy: 0.02: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:37<00:00,  3.18it/s]
+Device 0: Cor=10, CoT=0, Total=500
+Accuracy on validation set: 10 / 500 = 0.02
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 937.45 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:07<00:00, 55085.07 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 753.57 examples/s]
+Training Epoch: 14:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 14/25, batch 12050/12051 completed (loss: 1.9688: : 3013it [6:3
+8:49,  7.94s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.19677734375
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:29,  2.38it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:00,  2.76it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 600'
+Extracted Output: '600'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:50,  2.91it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 2'
+Extracted Output: '2'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:46,  2.99it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1120'
+Extracted Output: '1120'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:38<00:00,  3.15it/s]
+Device 0: Cor=7, CoT=0, Total=500
+Accuracy on validation set: 7 / 500 = 0.014
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+| 500/500 [00:00<00:00, 1002.85 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:06<00:00, 56518.58 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 731.14 examples/s]
+Training Epoch: 15:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 15/25, batch 2227/12051 completed (loss: 2.2344:  18%|██▍
+Training Epoch: 15/25, batch 2228/12051 completed (loss: 2.6562:  18%|▏| 557/30
+TraininTraining Epoch: 15/25, batch 2236/12051 completed (loss: 2.0:  19%|█████
+█████▉                                                | 559/3012 [1:14:23<5:23:
+Training Epoch: 15/25, batch 2237/12051 completed (loss: 2.0625:  19%|▏| 559/30
+
+Training Epoch: 15/25Training Epoch: 15/25, batch 2261/12051 completed (loss: 1
+.9609:  19%|██████████▌                                             | 565/3012
+Training Epoch: 15/25, batchTraining Epoch: 15/25, batch 2273/12051 completed (
+loss: 2.4219:  19%|██████████▌                                             | 56
+Training Epoch: 15/25, batch 2274/1Training Epoch: 15/25, batch 2275/12051 comp
+leted (loss: 2.5469:  19%|██████████▌
+Training Training Epoch: 15/25, batch 12050/12051 completed (loss: 1.7891: : 30
+13it [6:39:48,  7.96s/it]
+
+
+
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.17919921875
+Test Accuracy:   0%|
+
+
+                                                          | 0/500 [00:00<?, ?it
+/s]Question 0: Answer = '300' CoT = '<<4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   0%|▌
+
+
+                                                  | 1/500 [00:00<03:33,  2.34it
+/s]Question 1: Answer = '10' CoT = '<<1.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   0%|█
+
+
+                                                  | 2/500 [00:00<03:00,  2.75it
+/s]Question 2: Answer = '1400' CoT = '<<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.'
+Extracted Output: '1.'
+Test accuracy: 0.0:   1%|█▌
+
+
+                                                  | 3/500 [00:01<02:49,  2.93it
+/s]Question 3: Answer = '15' CoT = '<<21/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|██
+
+
+                                                  | 4/500 [00:01<02:44,  3.02it
+/s]Question 4: Answer = '240' CoT = '<<200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 60'
+Extracted Output: '60'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████████████| 500/500 [02:38<00:00,  3.15it
+/s]
+Device 0: Cor=7, CoT=0, Total=500
+Accuracy on validation set: 7 / 500 = 0.014
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████| 500/500 [00:00<00:00, 956.23 examples
+/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+████████████████████████████████| 385620/385620 [00:07<00:00, 55083.65 examples
+/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+███████████████████████████████████████████████████████████████████████████████
+████████████████████████████████████████| 500/500 [00:00<00:00, 762.60 examples
+/s]
+Training Epoch: 16:   0%|
+
+
+                                                         | 0/3012 [00:00<?, ?it
+/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 16/25, batch 1224/12051 completed (loss: 2.4844:  10%|█████████
+████████████▌
+
+             Training Epoch: 16/25, batch 1225/12051 completed (loss: 2.1875:
+10%|██████████████▌
+                                                                    | 306/3012
+[41:00<6:16:07,  8.34s/it]Training Epoch: 16/25, batch 1227/12051 completed (lo
+ss: 1.8203:  10%|██████████████▌
+
+  | 307/3012 [41:05<6Training Epoch: 16/25, batch 1228/12051 completed (loss: 1
+.8125:  10%|█▌             | 307/3012 [41:08<6:33:25,  8.73s/it]
+
+                            Training Epoch: 16/25, batch 12050/12051 completed
+(loss: 2.4375: : 3013it [6:44:19,  8.05s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.2275390625
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1250'
+Extracted Output: '1250'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:39,  2.27it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:05,  2.69it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 20000'
+Extracted Output: '20000'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:53,  2.87it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1'
+Extracted Output: '1'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:48,  2.95it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:40<00:00,  3.11it/s]
+Device 0: Cor=7, CoT=0, Total=500
+Accuracy on validation set: 7 / 500 = 0.014
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 964.51 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:06<00:00, 55850.78 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 762.48 examples/s]
+Training Epoch: 17:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 17/25, batch 12050/12051 completed (loss: 1.75: : 3013it [6:39:
+00,  7.95s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.23388671875
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:36,  2.30it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 7'
+Extracted Output: '7'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:02,  2.72it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1250'
+Extracted Output: '1250'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:51,  2.91it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:45,  3.00it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 40'
+Extracted Output: '40'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:39<00:00,  3.14it/s]
+Device 0: Cor=7, CoT=0, Total=500
+Accuracy on validation set: 7 / 500 = 0.014
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 944.08 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:07<00:00, 53343.31 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 764.05 examples/s]
+Training Epoch: 18:   0%|
+                  | 0/3012 [00:00<?, ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 18/25, batch 12050/12051 completed (loss: 2.1562: : 3013it [6:4
+0:01,  7.97s/it]
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:768: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distributed/fsdp
+/_state_dict_utils.py:711: UserWarning: When using ``NO_SHARD`` for ``ShardingS
+trategy``, full_state_dict willbe returned.
+  warnings.warn(
+saving model.
+eval loss 2.1279296875
+Test Accuracy:   0%|
+                   | 0/500 [00:00<?, ?it/s]Question 0: Answer = '300' CoT = '<<
+4-2=2>>
+<<2/.5=4>>
+<<12/4=3>>
+<<100*3=300>>'
+Full output: 'John cuts his grass to 2 inches.  It grows.5 inches per month.  W
+hen it gets to 4 inches he cuts it back down to 2 inches.  It cost $100 to get
+his grass cut.  How much does he pay per year?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.1'
+Extracted Output: '1.1'
+Test accuracy: 0.0:   0%|▏
+           | 1/500 [00:00<03:38,  2.28it/s]Question 1: Answer = '10' CoT = '<<1
+.5*2=3>>
+<<3+2.5=5.5>>
+<<1.5+3+5.5=10>>'
+Full output: 'Hannah has three dogs. The first dog eats 1.5 cups of dog food a
+day. The second dog eats twice as much while the third dog eats 2.5 cups more t
+han the second dog. How many cups of dog food should Hannah prepare in a day fo
+r her three dogs?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   0%|▎
+           | 2/500 [00:00<03:04,  2.70it/s]Question 2: Answer = '1400' CoT = '<
+<30/100*2000=600>>
+<<2000-600=1400>>'
+Full output: 'Travis wants to fly to Australia. The regular tickets cost about
+$2000. As Travis is a student, he will get a 30% discount on this price. How mu
+ch does he need to pay for his ticket?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 6000'
+Extracted Output: '6000'
+Test accuracy: 0.0:   1%|▍
+           | 3/500 [00:01<02:52,  2.88it/s]Question 3: Answer = '15' CoT = '<<2
+1/7=3>>
+<<5*3=15>>'
+Full output: 'A set of 7 spoons costs $21. If each spoon would be sold separate
+ly, how much would 5 spoons cost?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 1.5'
+Extracted Output: '1.5'
+Test accuracy: 0.0:   1%|▌
+           | 4/500 [00:01<02:46,  2.98it/s]Question 4: Answer = '240' CoT = '<<
+200*3=600>>
+<<600*.4=240>>'
+Full output: 'Tom bought his games for $200.  They tripled in value and he then
+ sold 40% of them.  How much did he sell the games for?
+<|start-latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|latent|><|e
+nd-latent|>### 200'
+Extracted Output: '200'
+Test accuracy: 0.01: 100%|█████████████████████████████████████████████████████
+█████████| 500/500 [02:38<00:00,  3.15it/s]
+Device 0: Cor=5, CoT=0, Total=500
+Accuracy on validation set: 5 / 500 = 0.01
+CoT match on validation set: 0 / 500 = 0.0
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+█| 500/500 [00:00<00:00, 968.06 examples/s]
+Map (num_proc=32): 100%|████████████████████████████████████████████████| 38562
+0/385620 [00:06<00:00, 55959.47 examples/s]
+Map (num_proc=32): 100%|███████████████████████████████████████████████████████
+████████████████████████████████████████████| 500/500 [00:00<00:00, 760.65 exam
+ples/s]
+Training Epoch: 19:   0%|
+                                                             | 0/3012 [00:00<?,
+ ?it/s]logging training data
+wandb: WARNING Serializing object of type str that is 206902 bytes
+wandb: WARNING Serializing object of type str that is 183482 bytes
+wandb: WARNING Serializing object of type str that is 155790 bytes
+wandb: WARNING Serializing object of type str that is 138632 bytes
+wandb: WARNING Serializing object of type str that is 111545 bytes
+wandb: WARNING Serializing object of type str that is 189040 bytes
+wandb: WARNING Serializing object of type str that is 115984 bytes
+Training Epoch: 19/25, batch 4/12051 completed (loss: 2.2969:   0%|
+                                                   | 1/3012 [00:09<6:47:45,  8.
+Training Epoch: 19/25, batch 5/12051 completed (loss: 2.3281:   0%| | 1/3012 [0
+
+Training EpochTraining Epoch: 19/25, batch 1415/12051 completed (loss: 1.7812:
+ 12%|██████▊                                                   | 354/3012 [46:4
+3<5:41:29,  7.71s/it][rank0]:[E1110 22:22:45.039286507 ProcessGroupNCCL.cpp:616
+] [Rank 0] Watchdog caught collective operation timeout: WorkNCCL(SeqNum=182513
+, OpType=ALLREDUCE, NumelIn=14061568, NumelOut=14061568, Timeout(ms)=600000) ra
+n for 600043 milliseconds before timing out.
+[rank0]:[E1110 22:22:45.040119956 ProcessGroupNCCL.cpp:1785] [PG ID 0 PG GUID 0
+(default_pg) Rank 0] Exception (either an error or timeout) detected by watchdo
+g at work: 182513, last enqueued NCCL work: 182513, last completed NCCL work: 1
+82512.
+[rank0]:[E1110 22:37:24.103323315 ProcessGroupNCCL.cpp:1484] [PG ID 0 PG GUID 0
+(default_pg) Rank 0] ProcessGroupNCCL's watchdog got stuck for 480 seconds with
+out making progress in monitoring enqueued collectives. This typically indicate
+s a NCCL/CUDA API (e.g., CudaEventDestroy) hang blocking the watchdog, and coul
+d be triggered by another thread holding the GIL inside a CUDA api (for example
+, CudaEventDestroy), or other deadlock-prone behaviors.If you suspect the watch
+dog is not actually stuck and a longer timeout would help, you can either incre
+ase the timeout (TORCH_NCCL_HEARTBEAT_TIMEOUT_SEC) to a larger value or disable
+ the heartbeat monitor (TORCH_NCCL_ENABLE_MONITORING=0).If either of aforementi
+oned helps, feel free to file an issue to PyTorch about the short timeout or fa
+lse positive abort; otherwise, please attempt to debug the hang.
+[rank0]:[F1110 22:45:24.104230779 ProcessGroupNCCL.cpp:1306] [PG ID 0 PG GUID 0
+(default_pg) Rank 0] [PG ID 0 PG GUID 0(default_pg) Rank 0] Terminating the pro
+cess after attempting to dump debug info, due to ProcessGroupNCCL watchdog hang
+.
+E1110 22:47:27.338000 155434 torch/distributed/elastic/multiprocessing/api.py:8
+69] failed (exitcode: -6) local_rank: 0 (pid: 155467) of binary: /home/exouser/
+coconut/.venv/bin/python3
+Traceback (most recent call last):
+  File "/home/exouser/coconut/.venv/bin/torchrun", line 10, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/run.py", line 919, in main
+    run(args)
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/run.py", line 910, in run
+    elastic_launch(
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/exouser/coconut/.venv/lib/python3.12/site-packages/torch/distribu
+ted/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError:
+=======================================================
+run.py FAILED
+-------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+-------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-11-10_22:47:27
+  host      : mlrecovery-new.js2local
+  rank      : 0 (local_rank: 0)
+  exitcode  : -6 (pid: 155467)
+  error_file: <N/A>
+  traceback : Signal 6 (SIGABRT) received by PID 155467
+=======================================================
+(coconut) exouser@mlrecovery-new:~/coconut$ tmux capture-pane -pS -100000 > pan
+e_dump.txt
+
