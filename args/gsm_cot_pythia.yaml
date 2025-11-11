@@ -2,30 +2,30 @@
 
 project: coconut
 save_path: /home/exouser/coconut/models/
-name: gsm-coconut
+name: gsm-cot-pythia
 
 only_eval: False
 
-coconut: True
-cot: False
+coconut: False
+cot: True
 no_thoughts: False
 no_cot: False
 
-c_thought: 2
-epochs_per_stage: 3
-max_latent_stage: 3
+c_thought: 0
+epochs_per_stage: 1
+max_latent_stage: 0
 pad_latent_to_max: True
 
-save_only_improve: False
+save_only_improve: True
 uniform_prob: 0.0
-model_id: openai-community/gpt2
-load_model_path: /home/exouser/coconut/models/gsm-cot/checkpoint_21
+model_id: EleutherAI/pythia-14m
+load_model_path: None
 seed: 0
-resume: 3
+resume: 0
 bf16: True
 train_path: data/gsm_train.json
 val_path: data/gsm_valid.json
-reset_optimizer: True
+reset_optimizer: False
 batch_size_training: 32
 debug: False
 gradient_accumulation_steps: 4

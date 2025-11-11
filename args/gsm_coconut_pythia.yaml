@@ -2,7 +2,7 @@
 
 project: coconut
 save_path: /home/exouser/coconut/models/
-name: gsm-coconut
+name: gsm-coconut-pythia
 
 only_eval: False
 
@@ -18,8 +18,8 @@ pad_latent_to_max: True
 
 save_only_improve: False
 uniform_prob: 0.0
-model_id: openai-community/gpt2
-load_model_path: /home/exouser/coconut/models/gsm-cot/checkpoint_21
+model_id: EleutherAI/pythia-14m
+load_model_path: /home/exouser/coconut/models/gsm-cot-pythia/checkpoint_25
 seed: 0
 resume: 3
 bf16: True
