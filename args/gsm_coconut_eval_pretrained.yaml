@@ -1,0 +1,44 @@
+# Evaluation configuration for pretrained coconut checkpoints from HuggingFace
+# Repository: Esther22/coconut_Reproduction
+
+project: coconut
+save_path: ./eval_results
+name: gsm-coconut-eval-pretrained
+
+only_eval: True
+
+coconut: True
+cot: False
+no_thoughts: False
+no_cot: False
+
+# Model configuration matching the pretrained checkpoints
+c_thought: 2
+epochs_per_stage: 3
+max_latent_stage: 3
+pad_latent_to_max: True
+
+save_only_improve: False
+uniform_prob: 0.0
+model_id: openai-community/gpt2
+
+# Update this path to point to the downloaded checkpoint
+# For Stage 1 coconut models, use one of: checkpoint_4 through checkpoint_12
+# Based on results.md, checkpoint_5 had the highest accuracy (35.2%)
+load_model_path: pretrained_checkpoints/stage_1_training_ck/checkpoint_12
+
+seed: 0
+resume: 12  # Evaluates at stage 1 (5//3=1) to match checkpoint_5's training stage (2 latent tokens)
+bf16: True
+
+# Data paths
+train_path: data/gsm_train.json
+val_path: data/gsm_test.json
+
+reset_optimizer: True
+batch_size_training: 32
+debug: False
+gradient_accumulation_steps: 4
+num_epochs: 25
+lr: !!float "1e-4"
+weight_decay: 0.01
