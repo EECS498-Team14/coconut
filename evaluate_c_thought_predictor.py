@@ -88,7 +88,7 @@ def build_input(question: str, num_latent_tokens: int, tokenizer, special_tokens
 
 
 class MLPPredictor(nn.Module):
-    def __init__(self, input_dim: int, num_classes: int, hidden_layers: list, dropout: float):
+    def __init__(self, input_dim: int, hidden_layers: list, dropout: float):
         super().__init__()
         layers = []
         prev_dim = input_dim
@@ -98,11 +98,52 @@ class MLPPredictor(nn.Module):
             if dropout > 0:
                 layers.append(nn.Dropout(dropout))
             prev_dim = h
-        layers.append(nn.Linear(prev_dim, num_classes))
+        layers.append(nn.Linear(prev_dim, 1))
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.net(x)
+        return self.net(x).squeeze(-1)
+
+
+class TransformerPredictor(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        d_model: int,
+        num_layers: int,
+        num_heads: int,
+        dim_feedforward: int,
+        dropout: float,
+        max_seq_len: int = 1,
+    ):
+        super().__init__()
+        self.max_seq_len = max_seq_len
+        self.input_proj = nn.Linear(input_dim, d_model)
+        self.pos_emb = nn.Embedding(max_seq_len, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+            activation="gelu",
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.head = nn.Sequential(
+            nn.LayerNorm(d_model),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 1),
+        )
+
+    def forward(self, x):
+        seq_len = self.max_seq_len
+        h = x.unsqueeze(1).repeat(1, seq_len, 1)
+        h = self.input_proj(h)
+        positions = torch.arange(seq_len, device=h.device)
+        h = h + self.pos_emb(positions)[None, :, :]
+        h = self.encoder(h)
+        pooled = h[:, 0, :]
+        return self.head(pooled).squeeze(-1)
 
 
 def load_predictor(predictor_path: str, device: str):
@@ -114,16 +155,32 @@ def load_predictor(predictor_path: str, device: str):
             "model_type": "mlp",
             "hidden_layers": [512, 512],
             "dropout": 0.1,
+            "d_model": 256,
+            "num_layers": 2,
+            "num_heads": 4,
+            "dim_feedforward": 512,
+            "max_seq_len": 1,
         },
     )
-    if cfg.get("model_type", "mlp") != "mlp":
-        raise ValueError(f"Unsupported model_type in checkpoint: {cfg.get('model_type')}")
-    model = MLPPredictor(
-        input_dim=ckpt["input_dim"],
-        num_classes=len(token_choices),
-        hidden_layers=cfg.get("hidden_layers", [512, 512]),
-        dropout=cfg.get("dropout", 0.1),
-    ).to(device)
+    model_type = cfg.get("model_type", "mlp")
+    if model_type == "mlp":
+        model = MLPPredictor(
+            input_dim=ckpt["input_dim"],
+            hidden_layers=cfg.get("hidden_layers", [512, 512]),
+            dropout=cfg.get("dropout", 0.1),
+        ).to(device)
+    elif model_type == "transformer":
+        model = TransformerPredictor(
+            input_dim=ckpt["input_dim"],
+            d_model=cfg.get("d_model", 256),
+            num_layers=cfg.get("num_layers", 2),
+            num_heads=cfg.get("num_heads", 4),
+            dim_feedforward=cfg.get("dim_feedforward", 512),
+            dropout=cfg.get("dropout", 0.1),
+            max_seq_len=cfg.get("max_seq_len", 1),
+        ).to(device)
+    else:
+        raise ValueError(f"Unsupported model_type in checkpoint: {model_type}")
     model.load_state_dict(ckpt["state_dict"])
     model.eval()
     return model, token_choices
@@ -145,6 +202,7 @@ def evaluate(
     max_new_tokens: int,
     max_questions: int,
     device: str,
+    baseline_steps: int,
 ):
     coconut_model, tokenizer, special_tokens = load_coconut_model(coconut_ckpt, model_id, device)
     predictor, token_choices = load_predictor(predictor_path, device)
@@ -155,7 +213,8 @@ def evaluate(
     if max_questions:
         dataset = dataset[:max_questions]
 
-    correct = 0
+    correct_pred = 0
+    correct_base = 0
     total = 0
 
     for item in tqdm(dataset, desc="Evaluating"):
@@ -166,8 +225,9 @@ def evaluate(
         with torch.no_grad():
             hs = get_prefix_hidden_state(coconut_model, tokenizer, question, special_tokens, device)
             logits = predictor(hs.unsqueeze(0))
-            pred_idx = logits.argmax(dim=-1).item()
-            num_tokens = token_choices[pred_idx]
+            pred_value = logits.item()
+            # choose nearest allowed token
+            num_tokens = min(token_choices, key=lambda t: abs(t - pred_value))
 
         # run coconut with predicted tokens
         inputs = build_input(question, num_tokens, tokenizer, special_tokens)
@@ -180,12 +240,27 @@ def evaluate(
             )
         pred_answer = extract_answer(tokenizer.decode(outputs[0], skip_special_tokens=True))
 
-        correct += pred_answer == answer
+        correct_pred += pred_answer == answer
+
+        # baseline: fixed number of latent steps
+        inputs_base = build_input(question, baseline_steps, tokenizer, special_tokens)
+        inputs_base = {k: v.to(device) for k, v in inputs_base.items()}
+        with torch.no_grad():
+            outputs_base = coconut_model.generate(
+                input_ids=inputs_base["input_ids"],
+                attention_mask=inputs_base["attention_mask"],
+                max_new_tokens=max_new_tokens,
+            )
+        base_answer = extract_answer(tokenizer.decode(outputs_base[0], skip_special_tokens=True))
+        correct_base += base_answer == answer
+
         total += 1
 
-    acc = correct / max(1, total)
-    print(f"Accuracy: {correct}/{total} = {acc:.4f}")
-    return acc
+    acc_pred = correct_pred / max(1, total)
+    acc_base = correct_base / max(1, total)
+    print(f"Predictor Accuracy: {correct_pred}/{total} = {acc_pred:.4f}")
+    print(f"Baseline  Accuracy: {correct_base}/{total} = {acc_base:.4f} (fixed steps = {baseline_steps})")
+    return acc_pred, acc_base
 
 
 def main():
@@ -200,6 +275,7 @@ def main():
     parser.add_argument("--predictor_path", type=str, default="c_thought_predictor.pt")
     parser.add_argument("--max_new_tokens", type=int, default=64)
     parser.add_argument("--max_questions", type=int, default=None)
+    parser.add_argument("--baseline_steps", type=int, default=2, help="Fixed latent steps for baseline comparison")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -212,6 +288,7 @@ def main():
         max_new_tokens=args.max_new_tokens,
         max_questions=args.max_questions,
         device=device,
+        baseline_steps=args.baseline_steps,
     )
 
 
