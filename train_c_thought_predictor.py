@@ -50,12 +50,20 @@ def load_coconut_model(checkpoint_path: str, model_id: str, device: str):
 def get_prefix_hidden_state(
     model,
     tokenizer,
-    question: str,
+    question_tokens: list,
     special_tokens: Dict[str, int],
     device: str,
+    n_latents_prefix: int,
 ) -> torch.Tensor:
-    question_tokens = tokenizer.encode(question + "\n", add_special_tokens=True)
-    input_ids = question_tokens + [special_tokens["start_id"]]
+    """
+    Get last hidden state for prefix that includes `n_latents_prefix` latent tokens.
+    This corresponds to the position right before the (n_latents_prefix+1)-th latent.
+    """
+    input_ids = (
+        question_tokens
+        + [special_tokens["start_id"]]
+        + [special_tokens["latent_id"]] * n_latents_prefix
+    )
     attention_mask = [1] * len(input_ids)
     position_ids = list(range(len(input_ids)))
 
@@ -70,7 +78,7 @@ def get_prefix_hidden_state(
 
 
 class MLPPredictor(nn.Module):
-    def __init__(self, input_dim: int, num_classes: int, hidden_layers: list, dropout: float):
+    def __init__(self, input_dim: int, hidden_layers: list, dropout: float):
         super().__init__()
         layers = []
         prev_dim = input_dim
@@ -80,11 +88,53 @@ class MLPPredictor(nn.Module):
             if dropout > 0:
                 layers.append(nn.Dropout(dropout))
             prev_dim = h
-        layers.append(nn.Linear(prev_dim, num_classes))
+        layers.append(nn.Linear(prev_dim, 1))  # regression output
         self.net = nn.Sequential(*layers)
 
     def forward(self, x):
-        return self.net(x)
+        return self.net(x).squeeze(-1)
+
+
+class TransformerPredictor(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        d_model: int,
+        num_layers: int,
+        num_heads: int,
+        dim_feedforward: int,
+        dropout: float,
+        max_seq_len: int = 1,
+    ):
+        super().__init__()
+        self.max_seq_len = max_seq_len
+        self.input_proj = nn.Linear(input_dim, d_model)
+        self.pos_emb = nn.Embedding(max_seq_len, d_model)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
+            dropout=dropout,
+            batch_first=True,
+            activation="gelu",
+        )
+        self.encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
+        self.head = nn.Sequential(
+            nn.LayerNorm(d_model),
+            nn.Dropout(dropout),
+            nn.Linear(d_model, 1),
+        )
+
+    def forward(self, x):
+        # repeat to seq_len to keep positional logic extensible
+        seq_len = self.max_seq_len
+        h = x.unsqueeze(1).repeat(1, seq_len, 1)
+        h = self.input_proj(h)
+        positions = torch.arange(seq_len, device=h.device)
+        h = h + self.pos_emb(positions)[None, :, :]
+        h = self.encoder(h)
+        pooled = h[:, 0, :]
+        return self.head(pooled).squeeze(-1)
 
 
 def collect_hidden_states_and_labels(
@@ -97,8 +147,13 @@ def collect_hidden_states_and_labels(
 ):
     """
     Use existing oracle results (poc_experiment_results.json) to avoid re-running
-    generation. For each question with a valid optimal_tokens >= 0, extract the
-    prefix hidden state and pair it with the oracle label.
+    generation. For each question with valid oracle info, extract multiple
+    (hidden_state, c_thoughts_left) pairs along the latent sequence.
+
+    Strategy:
+    - Define optimal_total = average of correct tokens (if multiple).
+    - For each integer step k in [0, floor(optimal_total)-1], get hidden state after k latents
+      (i.e., before latent k+1) and pair with label = optimal_total - k.
     """
     model, tokenizer, special_tokens = load_coconut_model(checkpoint_path, model_id, device)
 
@@ -114,28 +169,32 @@ def collect_hidden_states_and_labels(
     labels = []
 
     for item in tqdm(question_results, desc="Collecting hidden states"):
-        optimal_tokens = item.get("optimal_tokens", -1)
-        if optimal_tokens is None or optimal_tokens < 0:
+        token_results = item.get("token_results", {})
+        correct_tokens = sorted(
+            int(k) for k, v in token_results.items() if isinstance(v, dict) and v.get("correct", False)
+        )
+        if len(correct_tokens) == 0:
             continue  # skip if no oracle label
-        if optimal_tokens not in token_choices:
-            continue  # skip tokens that are outside known choices
 
-        question = item["question"]
-        hidden_state = get_prefix_hidden_state(model, tokenizer, question, special_tokens, device)
-        hidden_states.append(hidden_state)
-        labels.append(optimal_tokens)
+        optimal_total = sum(correct_tokens) / len(correct_tokens)  # average of valid tokens
+        question_tokens = tokenizer.encode(item["question"] + "\n", add_special_tokens=True)
+
+        max_int_step = int(optimal_total)
+        for k in range(max_int_step):
+            c_thoughts_left = optimal_total - k
+            hidden_state = get_prefix_hidden_state(
+                model, tokenizer, question_tokens, special_tokens, device, n_latents_prefix=k
+            )
+            hidden_states.append(hidden_state)
+            labels.append(float(c_thoughts_left))
 
     if len(hidden_states) == 0:
         raise RuntimeError("No training samples collected (no valid oracle labels).")
 
-    token_to_idx = {t: i for i, t in enumerate(sorted(set(token_choices)))}
-    label_indices = [token_to_idx[l] for l in labels]
-
     torch.save(
         {
             "hidden_states": torch.stack(hidden_states),
-            "label_indices": torch.tensor(label_indices, dtype=torch.long),
-            "token_mapping": token_to_idx,
+            "labels": torch.tensor(labels, dtype=torch.float32),
             "token_choices": sorted(set(token_choices)),
         },
         output_path,
@@ -155,7 +214,9 @@ def train_predictor(
 ):
     data = torch.load(data_path)
     hidden_states = data["hidden_states"]
-    labels = data["label_indices"]
+    labels = data.get("labels")
+    if labels is None:
+        raise RuntimeError("Expected regression labels under key 'labels'.")
     token_choices = data["token_choices"]
 
     # split train/val
@@ -185,14 +246,23 @@ def train_predictor(
     if model_type == "mlp":
         model = MLPPredictor(
             input_dim=hidden_states.shape[1],
-            num_classes=len(token_choices),
             hidden_layers=predictor_cfg.get("hidden_layers", [512, 512]),
             dropout=predictor_cfg.get("dropout", 0.1),
+        ).to(device)
+    elif model_type == "transformer":
+        model = TransformerPredictor(
+            input_dim=hidden_states.shape[1],
+            d_model=predictor_cfg.get("d_model", 256),
+            num_layers=predictor_cfg.get("num_layers", 2),
+            num_heads=predictor_cfg.get("num_heads", 4),
+            dim_feedforward=predictor_cfg.get("dim_feedforward", 512),
+            dropout=predictor_cfg.get("dropout", 0.1),
+            max_seq_len=predictor_cfg.get("max_seq_len", 1),
         ).to(device)
     else:
         raise ValueError(f"Unsupported model_type: {model_type}")
 
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     model.train()
@@ -202,8 +272,8 @@ def train_predictor(
             batch_states = batch_states.to(device)
             batch_labels = batch_labels.to(device)
 
-            logits = model(batch_states)
-            loss = criterion(logits, batch_labels)
+            preds = model(batch_states)
+            loss = criterion(preds, batch_labels)
 
             optimizer.zero_grad()
             loss.backward()
@@ -221,11 +291,11 @@ def train_predictor(
             for batch_states, batch_labels in val_loader:
                 batch_states = batch_states.to(device)
                 batch_labels = batch_labels.to(device)
-                logits = model(batch_states)
-                loss = criterion(logits, batch_labels)
+                preds = model(batch_states)
+                loss = criterion(preds, batch_labels)
                 val_loss += loss.item()
-                preds = logits.argmax(dim=-1)
-                correct += (preds == batch_labels).sum().item()
+                preds_rounded = preds.round()
+                correct += (preds_rounded == batch_labels.round()).sum().item()
                 total += batch_labels.numel()
         val_loss = val_loss / max(1, len(val_loader))
         val_acc = correct / max(1, total)
@@ -253,6 +323,12 @@ def load_predictor_config(config_path: str) -> Dict:
         "model_type": "mlp",
         "hidden_layers": [512, 512],
         "dropout": 0.1,
+        # transformer-specific defaults
+        "d_model": 256,
+        "num_layers": 2,
+        "num_heads": 4,
+        "dim_feedforward": 512,
+        "max_seq_len": 1,
     }
     if config_path and os.path.exists(config_path):
         with open(config_path, "r") as f:
