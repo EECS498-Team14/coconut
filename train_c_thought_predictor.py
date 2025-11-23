@@ -69,16 +69,19 @@ def get_prefix_hidden_state(
     return outputs.hidden_states[-1][:, -1, :].squeeze(0).cpu()
 
 
-class SimplePredictor(nn.Module):
-    def __init__(self, input_dim: int, hidden_dim: int, num_classes: int):
+class MLPPredictor(nn.Module):
+    def __init__(self, input_dim: int, num_classes: int, hidden_layers: list, dropout: float):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_dim, num_classes),
-        )
+        layers = []
+        prev_dim = input_dim
+        for h in hidden_layers:
+            layers.append(nn.Linear(prev_dim, h))
+            layers.append(nn.ReLU())
+            if dropout > 0:
+                layers.append(nn.Dropout(dropout))
+            prev_dim = h
+        layers.append(nn.Linear(prev_dim, num_classes))
+        self.net = nn.Sequential(*layers)
 
     def forward(self, x):
         return self.net(x)
@@ -143,12 +146,12 @@ def collect_hidden_states_and_labels(
 
 def train_predictor(
     data_path: str,
-    hidden_dim: int,
     batch_size: int,
     lr: float,
     num_epochs: int,
     output_path: str,
     val_ratio: float,
+    config_path: str,
 ):
     data = torch.load(data_path)
     hidden_states = data["hidden_states"]
@@ -162,6 +165,10 @@ def train_predictor(
     if n_train <= 0:
         raise RuntimeError("Not enough samples to create a validation split.")
 
+    perm = torch.randperm(total_n)
+    hidden_states = hidden_states[perm]
+    labels = labels[perm]
+
     train_states, val_states = torch.split(hidden_states, [n_train, n_val])
     train_labels, val_labels = torch.split(labels, [n_train, n_val])
 
@@ -173,11 +180,17 @@ def train_predictor(
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = SimplePredictor(
-        input_dim=hidden_states.shape[1],
-        hidden_dim=hidden_dim,
-        num_classes=len(token_choices),
-    ).to(device)
+    predictor_cfg = load_predictor_config(config_path)
+    model_type = predictor_cfg.get("model_type", "mlp")
+    if model_type == "mlp":
+        model = MLPPredictor(
+            input_dim=hidden_states.shape[1],
+            num_classes=len(token_choices),
+            hidden_layers=predictor_cfg.get("hidden_layers", [512, 512]),
+            dropout=predictor_cfg.get("dropout", 0.1),
+        ).to(device)
+    else:
+        raise ValueError(f"Unsupported model_type: {model_type}")
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
@@ -227,7 +240,7 @@ def train_predictor(
             "state_dict": model.state_dict(),
             "token_choices": token_choices,
             "input_dim": hidden_states.shape[1],
-            "hidden_dim": hidden_dim,
+            "predictor_config": predictor_cfg,
         },
         output_path,
     )
@@ -235,8 +248,21 @@ def train_predictor(
     return output_path
 
 
+def load_predictor_config(config_path: str) -> Dict:
+    default_cfg = {
+        "model_type": "mlp",
+        "hidden_layers": [512, 512],
+        "dropout": 0.1,
+    }
+    if config_path and os.path.exists(config_path):
+        with open(config_path, "r") as f:
+            cfg = json.load(f)
+        return {**default_cfg, **cfg}
+    return default_cfg
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Train predictor for adaptive c_thoughts")
+    parser = argparse.ArgumentParser(description="Train transformer predictor for adaptive c_thoughts")
     parser.add_argument(
         "--checkpoint_path",
         type=str,
@@ -246,12 +272,12 @@ def main():
     parser.add_argument("--poc_results", type=str, default="poc_experiment_results.json")
     parser.add_argument("--max_questions", type=int, default=10000)
     parser.add_argument("--collection_output", type=str, default="c_thought_dataset.pt")
-    parser.add_argument("--predictor_hidden_dim", type=int, default=512)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--num_epochs", type=int, default=5)
     parser.add_argument("--predictor_output", type=str, default="c_thought_predictor.pt")
     parser.add_argument("--val_ratio", type=float, default=0.1)
+    parser.add_argument("--predictor_config", type=str, default="predictor_config.json")
 
     args = parser.parse_args()
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -272,12 +298,12 @@ def main():
 
     train_predictor(
         data_path=dataset_path,
-        hidden_dim=args.predictor_hidden_dim,
         batch_size=args.batch_size,
         lr=args.lr,
         num_epochs=args.num_epochs,
         output_path=args.predictor_output,
         val_ratio=args.val_ratio,
+        config_path=args.predictor_config,
     )
 
 

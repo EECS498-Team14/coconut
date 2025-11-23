@@ -1,0 +1,5 @@
+{
+	"model_type": "mlp",
+	"hidden_layers": [1024, 4096, 1024],
+	"dropout": 0.1
+}
