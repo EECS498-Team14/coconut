@@ -567,7 +567,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max_questions",
         type=int,
-        default=None,
+        default=1000,
         help="Limit number of questions for quick testing",
     )
     parser.add_argument("--device", type=str, default="cuda", help="Device to run on")
