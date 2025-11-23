@@ -412,7 +412,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--token_choices",
         type=str,
-        default="0,2,3,4,5,6",
+        default="0,1,2,3,4,5,6",
         help="Comma-separated list of token counts to try",
     )
     parser.add_argument(
