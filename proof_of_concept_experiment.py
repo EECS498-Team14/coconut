@@ -1,29 +1,16 @@
 """
 Proof-of-Concept Experiment: Variable c_thoughts with Fixed Checkpoint
 
-Research Question:
-    Can the last checkpoint (checkpoint_12) achieve better accuracy than
-    checkpoint_5 by using optimal c_thoughts per question?
-
-Hypothesis:
-    If checkpoint_12 can handle variable token counts, then selecting the
-    optimal c_thoughts for each question should outperform checkpoint_5
-    (which is fixed at 2 tokens).
+Goal:
+    Generate oracle labels (optimal c_thoughts per question) for training a
+    predictor that selects the right number of latent tokens at inference time.
 
 Experiment Design:
     1. Load checkpoint_12 (latest, seen all stages)
     2. For each test question:
        - Try different c_thoughts values: [0, 2, 3, 4, 5, 6]
-       - Pick the one that gives correct answer
-    3. Compare to checkpoint_5 baseline (always 2 tokens)
-
-Expected Outcome:
-    If checkpoint_12 + optimal c_thoughts > checkpoint_5:
-        - Proves variable c_thoughts works with single checkpoint
-        - Proceed with training predictor
-
-    If checkpoint_12 + optimal c_thoughts <= checkpoint_5:
-        - Find out why with detailed analysis
+       - Pick the one that gives correct answer (smallest count wins)
+    3. Record detailed per-question results for later supervised training
 """
 
 import torch
@@ -32,7 +19,6 @@ from tqdm import tqdm
 from typing import List, Dict, Tuple
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from collections import defaultdict
-import numpy as np
 from coconut import Coconut
 
 
@@ -122,7 +108,7 @@ def load_coconut_model(
     This replicates the loading logic from run.py for inference.
 
     Args:
-        checkpoint_path: Path to checkpoint file (e.g., ./pretrained_checkpoints/stage_1_training_ck/checkpoint_5)
+        checkpoint_path: Path to checkpoint file (e.g., ./pretrained_checkpoints/stage_1_training_ck/checkpoint_12)
         model_id: Base model ID (default: gpt2)
         device: Device to load model on
 
@@ -240,7 +226,6 @@ def evaluate_single_question(
 def run_poc_experiment(
     test_data_path: str,
     checkpoint_12_path: str,
-    checkpoint_5_path: str,
     token_choices: List[int] = [0, 2, 3, 4, 5, 6],
     max_questions: int = None,
     device: str = "cuda",
@@ -251,7 +236,6 @@ def run_poc_experiment(
     Args:
         test_data_path: Path to GSM8k test data
         checkpoint_12_path: Path to checkpoint_12 (last checkpoint)
-        checkpoint_5_path: Path to checkpoint_5 (baseline)
         token_choices: Different c_thoughts values to try
         max_questions: Limit number of questions (for quick testing)
         device: Device to run on
@@ -285,10 +269,10 @@ def run_poc_experiment(
     print()
 
     # ========================================================================
-    # Experiment 1: Checkpoint 12 with Oracle Token Selection
+    # Checkpoint 12 with Oracle Token Selection
     # ========================================================================
     print("=" * 80)
-    print("EXPERIMENT 1: Checkpoint 12 + Oracle Token Selection")
+    print("CHECKPOINT 12 + ORACLE TOKEN SELECTION")
     print("=" * 80)
     print(f"For each question, try all token choices {token_choices}")
     print(f"and pick the one that gives correct answer (if any).")
@@ -381,119 +365,6 @@ def run_poc_experiment(
         print(f"    {num_tokens} tokens: {count} questions ({pct:.1f}%)")
     print()
 
-    # ========================================================================
-    # Experiment 2: Checkpoint 5 Baseline (Fixed 2 tokens)
-    # ========================================================================
-    print("=" * 80)
-    print("EXPERIMENT 2: Checkpoint 5 Baseline (Fixed at 2 tokens)")
-    print("=" * 80)
-    print(f"Loading checkpoint_5 from {checkpoint_5_path}...")
-    model_5 = load_coconut_model(checkpoint_5_path, device=device)
-    print()
-
-    results_5_baseline = {"correct": 0, "total": len(test_data), "question_results": []}
-
-    print("Evaluating checkpoint_5 with fixed 2 tokens...")
-    for question_data in tqdm(test_data, desc="Questions"):
-        question = question_data["question"]
-        ground_truth = question_data["answer"].replace(",", "").strip()
-
-        is_correct, predicted = evaluate_single_question(
-            question=question,
-            ground_truth=ground_truth,
-            num_latent_tokens=2,  # Fixed at stage 1
-            model=model_5,
-            tokenizer=tokenizer,
-            special_tokens=special_tokens,
-        )
-
-        if is_correct:
-            results_5_baseline["correct"] += 1
-
-        results_5_baseline["question_results"].append(
-            {
-                "question": question,
-                "ground_truth": ground_truth,
-                "predicted": predicted,
-                "correct": is_correct,
-            }
-        )
-
-    baseline_accuracy = results_5_baseline["correct"] / results_5_baseline["total"]
-
-    print()
-    print(f"Results for Checkpoint 5 Baseline:")
-    print(
-        f"  Accuracy: {results_5_baseline['correct']}/{results_5_baseline['total']} = {baseline_accuracy:.1%}"
-    )
-    print()
-
-    # ========================================================================
-    # Comparison and Analysis
-    # ========================================================================
-    print("=" * 80)
-    print("COMPARISON AND ANALYSIS")
-    print("=" * 80)
-    print()
-
-    improvement = oracle_accuracy - baseline_accuracy
-    improvement_pct = (
-        improvement / baseline_accuracy * 100 if baseline_accuracy > 0 else 0
-    )
-
-    print(f"Checkpoint 5 (baseline):        {baseline_accuracy:.1%}")
-    print(f"Checkpoint 12 (oracle):         {oracle_accuracy:.1%}")
-    print(
-        f"Improvement:                    {improvement:+.1%} ({improvement_pct:+.1f}%)"
-    )
-    print()
-
-    if oracle_accuracy > baseline_accuracy:
-        print("SUCCESS: Checkpoint 12 with oracle token selection beats checkpoint 5")
-    else:
-        print("FAILURE: Checkpoint 12 does NOT beat checkpoint 5")
-
-    print()
-
-    # ========================================================================
-    # Additional Analysis
-    # ========================================================================
-    print("=" * 80)
-    print("ADDITIONAL ANALYSIS")
-    print("=" * 80)
-    print()
-
-    print("Question-level comparison:")
-    both_correct = 0
-    only_ckpt12_correct = 0
-    only_ckpt5_correct = 0
-    both_wrong = 0
-
-    for i in range(len(test_data)):
-        ckpt12_correct = results_12_oracle["question_results"][i]["oracle_correct"]
-        ckpt5_correct = results_5_baseline["question_results"][i]["correct"]
-
-        if ckpt12_correct and ckpt5_correct:
-            both_correct += 1
-        elif ckpt12_correct and not ckpt5_correct:
-            only_ckpt12_correct += 1
-        elif not ckpt12_correct and ckpt5_correct:
-            only_ckpt5_correct += 1
-        else:
-            both_wrong += 1
-
-    print(
-        f"  Both correct:          {both_correct} ({both_correct / len(test_data):.1%})"
-    )
-    print(
-        f"  Only checkpoint_12:    {only_ckpt12_correct} ({only_ckpt12_correct / len(test_data):.1%})"
-    )
-    print(
-        f"  Only checkpoint_5:     {only_ckpt5_correct} ({only_ckpt5_correct / len(test_data):.1%})"
-    )
-    print(f"  Both wrong:            {both_wrong} ({both_wrong / len(test_data):.1%})")
-    print()
-
     # Save detailed results
     output_path = "poc_experiment_results.json"
     print(f"Saving detailed results to {output_path}...")
@@ -502,24 +373,13 @@ def run_poc_experiment(
             {
                 "experiment_config": {
                     "checkpoint_12_path": checkpoint_12_path,
-                    "checkpoint_5_path": checkpoint_5_path,
                     "token_choices": token_choices,
                     "num_questions": len(test_data),
                 },
                 "summary": {
                     "checkpoint_12_oracle_accuracy": oracle_accuracy,
-                    "checkpoint_5_baseline_accuracy": baseline_accuracy,
-                    "improvement": improvement,
-                    "improvement_pct": improvement_pct,
                 },
                 "checkpoint_12_results": results_12_oracle,
-                "checkpoint_5_results": results_5_baseline,
-                "question_level_comparison": {
-                    "both_correct": both_correct,
-                    "only_ckpt12_correct": only_ckpt12_correct,
-                    "only_ckpt5_correct": only_ckpt5_correct,
-                    "both_wrong": both_wrong,
-                },
             },
             f,
             indent=2,
@@ -532,10 +392,7 @@ def run_poc_experiment(
 
     return {
         "oracle_accuracy": oracle_accuracy,
-        "baseline_accuracy": baseline_accuracy,
-        "improvement": improvement,
         "results_12": results_12_oracle,
-        "results_5": results_5_baseline,
     }
 
 
@@ -553,15 +410,9 @@ if __name__ == "__main__":
         help="Path to checkpoint_12",
     )
     parser.add_argument(
-        "--checkpoint_5",
-        type=str,
-        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
-        help="Path to checkpoint_5",
-    )
-    parser.add_argument(
         "--token_choices",
         type=str,
-        default="0,1,2,3,4,5,6",
+        default="0,2,3,4,5,6",
         help="Comma-separated list of token counts to try",
     )
     parser.add_argument(
@@ -579,7 +430,6 @@ if __name__ == "__main__":
     results = run_poc_experiment(
         test_data_path=args.test_data,
         checkpoint_12_path=args.checkpoint_12,
-        checkpoint_5_path=args.checkpoint_5,
         token_choices=token_choices,
         max_questions=args.max_questions,
         device=args.device,
