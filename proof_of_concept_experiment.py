@@ -42,7 +42,7 @@ def build_input_with_tokens(
     tokenizer,
     start_id: int,
     latent_id: int,
-    end_id: int
+    end_id: int,
 ) -> Dict:
     """
     Build input sequence with specified number of latent tokens.
@@ -97,10 +97,7 @@ def build_input_with_tokens(
     # Build sequence with dynamic number of latent tokens
     if num_latent_tokens > 0:
         input_ids = (
-            question_tokens +
-            [start_id] +
-            [latent_id] * num_latent_tokens +
-            [end_id]
+            question_tokens + [start_id] + [latent_id] * num_latent_tokens + [end_id]
         )
     else:
         # No latent tokens (CoT-style)
@@ -110,13 +107,15 @@ def build_input_with_tokens(
     position_ids = list(range(len(input_ids)))
 
     return {
-        'input_ids': torch.tensor([input_ids]),
-        'attention_mask': torch.tensor([attention_mask]),
-        'position_ids': torch.tensor([position_ids])
+        "input_ids": torch.tensor([input_ids]),
+        "attention_mask": torch.tensor([attention_mask]),
+        "position_ids": torch.tensor([position_ids]),
     }
 
 
-def load_coconut_model(checkpoint_path: str, model_id: str = "openai-community/gpt2", device: str = 'cuda'):
+def load_coconut_model(
+    checkpoint_path: str, model_id: str = "openai-community/gpt2", device: str = "cuda"
+):
     """
     Load a coconut model from a checkpoint.
 
@@ -200,7 +199,7 @@ def evaluate_single_question(
     model,
     tokenizer,
     special_tokens: Dict[str, int],
-    max_new_tokens: int = 64
+    max_new_tokens: int = 64,
 ) -> Tuple[bool, str]:
     """
     Evaluate a single question with specified number of latent tokens.
@@ -213,7 +212,7 @@ def evaluate_single_question(
         question=question,
         num_latent_tokens=num_latent_tokens,
         tokenizer=tokenizer,
-        **special_tokens
+        **special_tokens,
     )
 
     # Move to device
@@ -223,9 +222,9 @@ def evaluate_single_question(
     # Generate
     with torch.no_grad():
         outputs = model.generate(
-            input_ids=inputs['input_ids'],
-            attention_mask=inputs['attention_mask'],
-            max_new_tokens=max_new_tokens
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
+            max_new_tokens=max_new_tokens,
         )
 
     # Extract answer
@@ -233,7 +232,7 @@ def evaluate_single_question(
     predicted_answer = extract_answer(generated_text)
 
     # Check correctness
-    is_correct = (predicted_answer == ground_truth)
+    is_correct = predicted_answer == ground_truth
 
     return is_correct, predicted_answer
 
@@ -244,7 +243,7 @@ def run_poc_experiment(
     checkpoint_5_path: str,
     token_choices: List[int] = [0, 2, 3, 4, 5, 6],
     max_questions: int = None,
-    device: str = 'cuda'
+    device: str = "cuda",
 ):
     """
     Main proof-of-concept experiment.
@@ -260,7 +259,7 @@ def run_poc_experiment(
 
     # Load data
     print(f"Loading test data from {test_data_path}...")
-    with open(test_data_path, 'r') as f:
+    with open(test_data_path, "r") as f:
         test_data = json.load(f)
 
     if max_questions:
@@ -278,9 +277,9 @@ def run_poc_experiment(
     tokenizer.add_tokens("<|latent|>")
 
     special_tokens = {
-        'start_id': tokenizer.convert_tokens_to_ids("<|start-latent|>"),
-        'latent_id': tokenizer.convert_tokens_to_ids("<|latent|>"),
-        'end_id': tokenizer.convert_tokens_to_ids("<|end-latent|>")
+        "start_id": tokenizer.convert_tokens_to_ids("<|start-latent|>"),
+        "latent_id": tokenizer.convert_tokens_to_ids("<|latent|>"),
+        "end_id": tokenizer.convert_tokens_to_ids("<|end-latent|>"),
     }
     print(f"Special tokens: {special_tokens}")
     print()
@@ -288,9 +287,9 @@ def run_poc_experiment(
     # ========================================================================
     # Experiment 1: Checkpoint 12 with Oracle Token Selection
     # ========================================================================
-    print("="*80)
+    print("=" * 80)
     print("EXPERIMENT 1: Checkpoint 12 + Oracle Token Selection")
-    print("="*80)
+    print("=" * 80)
     print(f"For each question, try all token choices {token_choices}")
     print(f"and pick the one that gives correct answer (if any).")
     print()
@@ -300,16 +299,16 @@ def run_poc_experiment(
     print()
 
     results_12_oracle = {
-        'correct_by_token_count': defaultdict(int),
-        'total_by_token_count': defaultdict(int),
-        'optimal_tokens_per_question': [],
-        'question_results': []
+        "correct_by_token_count": defaultdict(int),
+        "total_by_token_count": defaultdict(int),
+        "optimal_tokens_per_question": [],
+        "question_results": [],
     }
 
     print("Evaluating checkpoint_12 with different token counts...")
     for question_data in tqdm(test_data, desc="Questions"):
-        question = question_data['question']
-        ground_truth = question_data['answer'].replace(",", "").strip()
+        question = question_data["question"]
+        ground_truth = question_data["answer"].replace(",", "").strip()
 
         # Try all token counts
         token_results = {}
@@ -320,20 +319,17 @@ def run_poc_experiment(
                 num_latent_tokens=num_tokens,
                 model=model_12,
                 tokenizer=tokenizer,
-                special_tokens=special_tokens
+                special_tokens=special_tokens,
             )
 
-            token_results[num_tokens] = {
-                'correct': is_correct,
-                'answer': predicted
-            }
+            token_results[num_tokens] = {"correct": is_correct, "answer": predicted}
 
-            results_12_oracle['total_by_token_count'][num_tokens] += 1
+            results_12_oracle["total_by_token_count"][num_tokens] += 1
             if is_correct:
-                results_12_oracle['correct_by_token_count'][num_tokens] += 1
+                results_12_oracle["correct_by_token_count"][num_tokens] += 1
 
         # Find best token count for this question (oracle)
-        correct_tokens = [k for k, v in token_results.items() if v['correct']]
+        correct_tokens = [k for k, v in token_results.items() if v["correct"]]
 
         if correct_tokens:
             # If multiple work, choose the smallest (most efficient)
@@ -344,35 +340,39 @@ def run_poc_experiment(
             optimal_tokens = -1
             question_correct = False
 
-        results_12_oracle['optimal_tokens_per_question'].append(optimal_tokens)
-        results_12_oracle['question_results'].append({
-            'question': question,
-            'ground_truth': ground_truth,
-            'optimal_tokens': optimal_tokens,
-            'token_results': token_results,
-            'oracle_correct': question_correct
-        })
+        results_12_oracle["optimal_tokens_per_question"].append(optimal_tokens)
+        results_12_oracle["question_results"].append(
+            {
+                "question": question,
+                "ground_truth": ground_truth,
+                "optimal_tokens": optimal_tokens,
+                "token_results": token_results,
+                "oracle_correct": question_correct,
+            }
+        )
 
     # Compute accuracy with oracle
     oracle_correct = sum(
-        1 for x in results_12_oracle['optimal_tokens_per_question'] if x >= 0
+        1 for x in results_12_oracle["optimal_tokens_per_question"] if x >= 0
     )
     oracle_accuracy = oracle_correct / len(test_data)
 
     print()
     print("Results for Checkpoint 12 + Oracle:")
-    print(f"  Oracle Accuracy: {oracle_correct}/{len(test_data)} = {oracle_accuracy:.1%}")
+    print(
+        f"  Oracle Accuracy: {oracle_correct}/{len(test_data)} = {oracle_accuracy:.1%}"
+    )
     print()
     print("  Accuracy by token count:")
     for num_tokens in sorted(token_choices):
-        correct = results_12_oracle['correct_by_token_count'][num_tokens]
-        total = results_12_oracle['total_by_token_count'][num_tokens]
+        correct = results_12_oracle["correct_by_token_count"][num_tokens]
+        total = results_12_oracle["total_by_token_count"][num_tokens]
         acc = correct / total if total > 0 else 0
         print(f"    {num_tokens} tokens: {correct}/{total} = {acc:.1%}")
     print()
     print("  Optimal token distribution:")
     token_dist = defaultdict(int)
-    for t in results_12_oracle['optimal_tokens_per_question']:
+    for t in results_12_oracle["optimal_tokens_per_question"]:
         if t >= 0:
             token_dist[t] += 1
     for num_tokens in sorted(token_dist.keys()):
@@ -384,23 +384,19 @@ def run_poc_experiment(
     # ========================================================================
     # Experiment 2: Checkpoint 5 Baseline (Fixed 2 tokens)
     # ========================================================================
-    print("="*80)
+    print("=" * 80)
     print("EXPERIMENT 2: Checkpoint 5 Baseline (Fixed at 2 tokens)")
-    print("="*80)
+    print("=" * 80)
     print(f"Loading checkpoint_5 from {checkpoint_5_path}...")
     model_5 = load_coconut_model(checkpoint_5_path, device=device)
     print()
 
-    results_5_baseline = {
-        'correct': 0,
-        'total': len(test_data),
-        'question_results': []
-    }
+    results_5_baseline = {"correct": 0, "total": len(test_data), "question_results": []}
 
     print("Evaluating checkpoint_5 with fixed 2 tokens...")
     for question_data in tqdm(test_data, desc="Questions"):
-        question = question_data['question']
-        ground_truth = question_data['answer'].replace(",", "").strip()
+        question = question_data["question"]
+        ground_truth = question_data["answer"].replace(",", "").strip()
 
         is_correct, predicted = evaluate_single_question(
             question=question,
@@ -408,40 +404,48 @@ def run_poc_experiment(
             num_latent_tokens=2,  # Fixed at stage 1
             model=model_5,
             tokenizer=tokenizer,
-            special_tokens=special_tokens
+            special_tokens=special_tokens,
         )
 
         if is_correct:
-            results_5_baseline['correct'] += 1
+            results_5_baseline["correct"] += 1
 
-        results_5_baseline['question_results'].append({
-            'question': question,
-            'ground_truth': ground_truth,
-            'predicted': predicted,
-            'correct': is_correct
-        })
+        results_5_baseline["question_results"].append(
+            {
+                "question": question,
+                "ground_truth": ground_truth,
+                "predicted": predicted,
+                "correct": is_correct,
+            }
+        )
 
-    baseline_accuracy = results_5_baseline['correct'] / results_5_baseline['total']
+    baseline_accuracy = results_5_baseline["correct"] / results_5_baseline["total"]
 
     print()
     print(f"Results for Checkpoint 5 Baseline:")
-    print(f"  Accuracy: {results_5_baseline['correct']}/{results_5_baseline['total']} = {baseline_accuracy:.1%}")
+    print(
+        f"  Accuracy: {results_5_baseline['correct']}/{results_5_baseline['total']} = {baseline_accuracy:.1%}"
+    )
     print()
 
     # ========================================================================
     # Comparison and Analysis
     # ========================================================================
-    print("="*80)
+    print("=" * 80)
     print("COMPARISON AND ANALYSIS")
-    print("="*80)
+    print("=" * 80)
     print()
 
     improvement = oracle_accuracy - baseline_accuracy
-    improvement_pct = improvement / baseline_accuracy * 100 if baseline_accuracy > 0 else 0
+    improvement_pct = (
+        improvement / baseline_accuracy * 100 if baseline_accuracy > 0 else 0
+    )
 
     print(f"Checkpoint 5 (baseline):        {baseline_accuracy:.1%}")
     print(f"Checkpoint 12 (oracle):         {oracle_accuracy:.1%}")
-    print(f"Improvement:                    {improvement:+.1%} ({improvement_pct:+.1f}%)")
+    print(
+        f"Improvement:                    {improvement:+.1%} ({improvement_pct:+.1f}%)"
+    )
     print()
 
     if oracle_accuracy > baseline_accuracy:
@@ -454,9 +458,9 @@ def run_poc_experiment(
     # ========================================================================
     # Additional Analysis
     # ========================================================================
-    print("="*80)
+    print("=" * 80)
     print("ADDITIONAL ANALYSIS")
-    print("="*80)
+    print("=" * 80)
     print()
 
     print("Question-level comparison:")
@@ -466,8 +470,8 @@ def run_poc_experiment(
     both_wrong = 0
 
     for i in range(len(test_data)):
-        ckpt12_correct = results_12_oracle['question_results'][i]['oracle_correct']
-        ckpt5_correct = results_5_baseline['question_results'][i]['correct']
+        ckpt12_correct = results_12_oracle["question_results"][i]["oracle_correct"]
+        ckpt5_correct = results_5_baseline["question_results"][i]["correct"]
 
         if ckpt12_correct and ckpt5_correct:
             both_correct += 1
@@ -478,50 +482,60 @@ def run_poc_experiment(
         else:
             both_wrong += 1
 
-    print(f"  Both correct:          {both_correct} ({both_correct/len(test_data):.1%})")
-    print(f"  Only checkpoint_12:    {only_ckpt12_correct} ({only_ckpt12_correct/len(test_data):.1%})")
-    print(f"  Only checkpoint_5:     {only_ckpt5_correct} ({only_ckpt5_correct/len(test_data):.1%})")
-    print(f"  Both wrong:            {both_wrong} ({both_wrong/len(test_data):.1%})")
+    print(
+        f"  Both correct:          {both_correct} ({both_correct / len(test_data):.1%})"
+    )
+    print(
+        f"  Only checkpoint_12:    {only_ckpt12_correct} ({only_ckpt12_correct / len(test_data):.1%})"
+    )
+    print(
+        f"  Only checkpoint_5:     {only_ckpt5_correct} ({only_ckpt5_correct / len(test_data):.1%})"
+    )
+    print(f"  Both wrong:            {both_wrong} ({both_wrong / len(test_data):.1%})")
     print()
 
     # Save detailed results
     output_path = "poc_experiment_results.json"
     print(f"Saving detailed results to {output_path}...")
-    with open(output_path, 'w') as f:
-        json.dump({
-            'experiment_config': {
-                'checkpoint_12_path': checkpoint_12_path,
-                'checkpoint_5_path': checkpoint_5_path,
-                'token_choices': token_choices,
-                'num_questions': len(test_data)
+    with open(output_path, "w") as f:
+        json.dump(
+            {
+                "experiment_config": {
+                    "checkpoint_12_path": checkpoint_12_path,
+                    "checkpoint_5_path": checkpoint_5_path,
+                    "token_choices": token_choices,
+                    "num_questions": len(test_data),
+                },
+                "summary": {
+                    "checkpoint_12_oracle_accuracy": oracle_accuracy,
+                    "checkpoint_5_baseline_accuracy": baseline_accuracy,
+                    "improvement": improvement,
+                    "improvement_pct": improvement_pct,
+                },
+                "checkpoint_12_results": results_12_oracle,
+                "checkpoint_5_results": results_5_baseline,
+                "question_level_comparison": {
+                    "both_correct": both_correct,
+                    "only_ckpt12_correct": only_ckpt12_correct,
+                    "only_ckpt5_correct": only_ckpt5_correct,
+                    "both_wrong": both_wrong,
+                },
             },
-            'summary': {
-                'checkpoint_12_oracle_accuracy': oracle_accuracy,
-                'checkpoint_5_baseline_accuracy': baseline_accuracy,
-                'improvement': improvement,
-                'improvement_pct': improvement_pct
-            },
-            'checkpoint_12_results': results_12_oracle,
-            'checkpoint_5_results': results_5_baseline,
-            'question_level_comparison': {
-                'both_correct': both_correct,
-                'only_ckpt12_correct': only_ckpt12_correct,
-                'only_ckpt5_correct': only_ckpt5_correct,
-                'both_wrong': both_wrong
-            }
-        }, f, indent=2)
+            f,
+            indent=2,
+        )
 
     print()
-    print("="*80)
+    print("=" * 80)
     print("EXPERIMENT COMPLETE")
-    print("="*80)
+    print("=" * 80)
 
     return {
-        'oracle_accuracy': oracle_accuracy,
-        'baseline_accuracy': baseline_accuracy,
-        'improvement': improvement,
-        'results_12': results_12_oracle,
-        'results_5': results_5_baseline
+        "oracle_accuracy": oracle_accuracy,
+        "baseline_accuracy": baseline_accuracy,
+        "improvement": improvement,
+        "results_12": results_12_oracle,
+        "results_5": results_5_baseline,
     }
 
 
@@ -529,24 +543,38 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Proof-of-concept experiment")
-    parser.add_argument("--test_data", type=str, default="data/gsm_test.json",
-                        help="Path to test data")
-    parser.add_argument("--checkpoint_12", type=str,
-                        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_12",
-                        help="Path to checkpoint_12")
-    parser.add_argument("--checkpoint_5", type=str,
-                        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
-                        help="Path to checkpoint_5")
-    parser.add_argument("--token_choices", type=str, default="0,2,3,4,5,6",
-                        help="Comma-separated list of token counts to try")
-    parser.add_argument("--max_questions", type=int, default=None,
-                        help="Limit number of questions for quick testing")
-    parser.add_argument("--device", type=str, default="cuda",
-                        help="Device to run on")
+    parser.add_argument(
+        "--test_data", type=str, default="data/gsm_train.json", help="Path to test data"
+    )
+    parser.add_argument(
+        "--checkpoint_12",
+        type=str,
+        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_12",
+        help="Path to checkpoint_12",
+    )
+    parser.add_argument(
+        "--checkpoint_5",
+        type=str,
+        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
+        help="Path to checkpoint_5",
+    )
+    parser.add_argument(
+        "--token_choices",
+        type=str,
+        default="0,1,2,3,4,5,6",
+        help="Comma-separated list of token counts to try",
+    )
+    parser.add_argument(
+        "--max_questions",
+        type=int,
+        default=None,
+        help="Limit number of questions for quick testing",
+    )
+    parser.add_argument("--device", type=str, default="cuda", help="Device to run on")
 
     args = parser.parse_args()
 
-    token_choices = [int(x) for x in args.token_choices.split(',')]
+    token_choices = [int(x) for x in args.token_choices.split(",")]
 
     results = run_poc_experiment(
         test_data_path=args.test_data,
@@ -554,5 +582,5 @@ if __name__ == "__main__":
         checkpoint_5_path=args.checkpoint_5,
         token_choices=token_choices,
         max_questions=args.max_questions,
-        device=args.device
+        device=args.device,
     )
