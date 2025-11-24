@@ -46,12 +46,20 @@ def load_coconut_model(checkpoint_path: str, model_id: str, device: str):
 def get_prefix_hidden_state(
     model,
     tokenizer,
-    question: str,
+    question_tokens: list,
     special_tokens: Dict[str, int],
     device: str,
+    n_latents_prefix: int,
 ) -> torch.Tensor:
-    question_tokens = tokenizer.encode(question + "\n", add_special_tokens=True)
-    input_ids = question_tokens + [special_tokens["start_id"]]
+    """
+    Get the last hidden state of the prefix that includes n_latents_prefix latent tokens.
+    This corresponds to the state right before the next latent token.
+    """
+    input_ids = (
+        question_tokens
+        + [special_tokens["start_id"]]
+        + [special_tokens["latent_id"]] * n_latents_prefix
+    )
     attention_mask = [1] * len(input_ids)
     position_ids = list(range(len(input_ids)))
 
@@ -203,6 +211,7 @@ def evaluate(
     max_questions: int,
     device: str,
     baseline_steps: int,
+    max_c_thoughts: int,
 ):
     coconut_model, tokenizer, special_tokens = load_coconut_model(coconut_ckpt, model_id, device)
     predictor, token_choices = load_predictor(predictor_path, device)
@@ -220,14 +229,26 @@ def evaluate(
     for item in tqdm(dataset, desc="Evaluating"):
         question = item["question"]
         answer = item["answer"].replace(",", "").strip()
+        question_tokens = tokenizer.encode(question + "\n", add_special_tokens=True)
 
-        # predict optimal tokens
-        with torch.no_grad():
-            hs = get_prefix_hidden_state(coconut_model, tokenizer, question, special_tokens, device)
-            logits = predictor(hs.unsqueeze(0))
-            pred_value = logits.item()
-            # choose nearest allowed token
-            num_tokens = min(token_choices, key=lambda t: abs(t - pred_value))
+        # iterative prediction of remaining steps
+        k_latents = 0
+        while k_latents < max_c_thoughts:
+            with torch.no_grad():
+                hs = get_prefix_hidden_state(
+                    coconut_model,
+                    tokenizer,
+                    question_tokens,
+                    special_tokens,
+                    device,
+                    n_latents_prefix=k_latents,
+                )
+                pred_remaining = predictor(hs.unsqueeze(0)).item()
+            if pred_remaining <= 0:
+                break
+            k_latents += 1
+
+        num_tokens = k_latents
 
         # run coconut with predicted tokens
         inputs = build_input(question, num_tokens, tokenizer, special_tokens)
@@ -276,6 +297,7 @@ def main():
     parser.add_argument("--max_new_tokens", type=int, default=64)
     parser.add_argument("--max_questions", type=int, default=None)
     parser.add_argument("--baseline_steps", type=int, default=2, help="Fixed latent steps for baseline comparison")
+    parser.add_argument("--max_c_thoughts", type=int, default=10, help="Ceiling for iterative latent generation")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -289,6 +311,7 @@ def main():
         max_questions=args.max_questions,
         device=device,
         baseline_steps=args.baseline_steps,
+        max_c_thoughts=args.max_c_thoughts,
     )
 
 

@@ -47,12 +47,16 @@ def load_coconut_model(checkpoint_path: str, model_id: str, device: str):
 def get_prefix_hidden_state(
     model,
     tokenizer,
-    question: str,
+    question_tokens: list,
     special_tokens: Dict[str, int],
     device: str,
+    n_latents_prefix: int = 0,
 ) -> torch.Tensor:
-    question_tokens = tokenizer.encode(question + "\n", add_special_tokens=True)
-    input_ids = question_tokens + [special_tokens["start_id"]]
+    input_ids = (
+        question_tokens
+        + [special_tokens["start_id"]]
+        + [special_tokens["latent_id"]] * n_latents_prefix
+    )
     attention_mask = [1] * len(input_ids)
     position_ids = list(range(len(input_ids)))
 
@@ -173,6 +177,7 @@ def analyze_predictions(
     max_questions: int,
     device: str,
     output_path: str = None,
+    max_c_thoughts: int = 10,
 ):
     coconut_model, tokenizer, special_tokens = load_coconut_model(coconut_ckpt, model_id, device)
     predictor, token_choices = load_predictor(predictor_path, device)
@@ -185,18 +190,42 @@ def analyze_predictions(
 
     pred_values = []
     nearest_tokens = []
+    actual_steps_used = []
     for item in tqdm(dataset, desc="Collecting predictor outputs"):
         question = item["question"]
-        with torch.no_grad():
-            hs = get_prefix_hidden_state(coconut_model, tokenizer, question, special_tokens, device)
-            val = predictor(hs.unsqueeze(0)).item()
-        pred_values.append(val)
-        nearest_tokens.append(min(token_choices, key=lambda t: abs(t - val)))
+        question_tokens = tokenizer.encode(question + "\n", add_special_tokens=True)
+
+        # iterative prediction of remaining steps
+        k_latents = 0
+        step_pred_values = []
+        while k_latents < max_c_thoughts:
+            with torch.no_grad():
+                hs = get_prefix_hidden_state(
+                    coconut_model,
+                    tokenizer,
+                    question_tokens,
+                    special_tokens,
+                    device,
+                    n_latents_prefix=k_latents,
+                )
+                val = predictor(hs.unsqueeze(0)).item()
+            step_pred_values.append(val)
+            if val <= 0:
+                break
+            k_latents += 1
+
+        # record last prediction and nearest token for the first step
+        if step_pred_values:
+            pred_values.append(step_pred_values[0])
+            nearest_tokens.append(min(token_choices, key=lambda t: abs(t - step_pred_values[0])))
+        actual_steps_used.append(k_latents)
 
     token_counter = Counter(nearest_tokens)
     mean_pred = sum(pred_values) / len(pred_values) if pred_values else 0.0
     min_pred = min(pred_values) if pred_values else 0.0
     max_pred = max(pred_values) if pred_values else 0.0
+    steps_counter = Counter(actual_steps_used)
+    mean_steps = sum(actual_steps_used) / len(actual_steps_used) if actual_steps_used else 0.0
 
     print(f"Total samples: {len(pred_values)}")
     print(f"Pred value mean: {mean_pred:.3f}, min: {min_pred:.3f}, max: {max_pred:.3f}")
@@ -205,6 +234,12 @@ def analyze_predictions(
         cnt = token_counter[k]
         pct = cnt / max(1, len(nearest_tokens)) * 100
         print(f"  {k}: {cnt} ({pct:.2f}%)")
+    print("Actual steps used distribution:")
+    for k in sorted(steps_counter.keys()):
+        cnt = steps_counter[k]
+        pct = cnt / max(1, len(actual_steps_used)) * 100
+        print(f"  {k}: {cnt} ({pct:.2f}%)")
+    print(f"Actual steps mean: {mean_steps:.3f}")
 
     if output_path:
         with open(output_path, "w") as f:
@@ -214,6 +249,9 @@ def analyze_predictions(
                     "nearest_token_counts": dict(token_counter),
                     "token_choices": token_choices,
                     "stats": {"mean": mean_pred, "min": min_pred, "max": max_pred},
+                    "steps_used": actual_steps_used,
+                    "steps_counts": dict(steps_counter),
+                    "steps_mean": mean_steps,
                 },
                 f,
                 indent=2,
@@ -233,6 +271,7 @@ def main():
     parser.add_argument("--predictor_path", type=str, default="c_thought_predictor.pt")
     parser.add_argument("--max_questions", type=int, default=None)
     parser.add_argument("--output_path", type=str, default="predictor_bias_report.json")
+    parser.add_argument("--max_c_thoughts", type=int, default=10, help="Ceiling for iterative latent generation")
     args = parser.parse_args()
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -244,6 +283,7 @@ def main():
         max_questions=args.max_questions,
         device=device,
         output_path=args.output_path,
+        max_c_thoughts=args.max_c_thoughts,
     )
 
 
