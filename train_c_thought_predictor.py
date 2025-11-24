@@ -166,7 +166,7 @@ def collect_hidden_states_and_labels(
         question_results = question_results[:max_questions]
 
     hidden_states = []
-    labels = []
+    all_targets = []  # Will store lists of targets for each sample
 
     for item in tqdm(question_results, desc="Collecting hidden states"):
         token_results = item.get("token_results", {})
@@ -181,26 +181,69 @@ def collect_hidden_states_and_labels(
 
         max_int_step = int(optimal_total)
         for k in range(max_int_step):
-            c_thoughts_left = optimal_total - k
+            # Store all correct lengths shifted by k
+            targets_at_k = [float(c - k) for c in correct_tokens]
             hidden_state = get_prefix_hidden_state(
                 model, tokenizer, question_tokens, special_tokens, device, n_latents_prefix=k
             )
             hidden_states.append(hidden_state)
-            labels.append(float(c_thoughts_left))
+            all_targets.append(targets_at_k)
 
     if len(hidden_states) == 0:
         raise RuntimeError("No training samples collected (no valid oracle labels).")
 
+    # Pad all_targets to the same length
+    max_num_targets = max(len(targets) for targets in all_targets)
+    padded_targets = []
+    masks = []
+    for targets in all_targets:
+        num_valid = len(targets)
+        padded = targets + [0.0] * (max_num_targets - num_valid)  # pad with 0
+        mask = [1.0] * num_valid + [0.0] * (max_num_targets - num_valid)
+        padded_targets.append(padded)
+        masks.append(mask)
+
     torch.save(
         {
             "hidden_states": torch.stack(hidden_states),
-            "labels": torch.tensor(labels, dtype=torch.float32),
+            "targets": torch.tensor(padded_targets, dtype=torch.float32),
+            "masks": torch.tensor(masks, dtype=torch.float32),
             "token_choices": sorted(set(token_choices)),
         },
         output_path,
     )
     print(f"Saved {len(hidden_states)} samples to {output_path}")
     return output_path
+
+
+def multi_target_mse_loss(preds, targets, masks):
+    """
+    Compute MSE loss as mean squared distance to all correct targets.
+
+    For example, if correct lengths are [2, 3], the loss for prediction x is:
+    0.5 * ((x-2)^2 + (x-3)^2)
+
+    Args:
+        preds: (batch_size,) - predicted values
+        targets: (batch_size, num_targets) - multiple target values per sample (padded)
+        masks: (batch_size, num_targets) - 1.0 for valid targets, 0.0 for padding
+
+    Returns:
+        Scalar loss value
+    """
+    # Expand preds to match targets shape: (batch_size, num_targets)
+    preds_expanded = preds.unsqueeze(1).expand_as(targets)
+
+    # Compute squared distances: (batch_size, num_targets)
+    squared_dists = (preds_expanded - targets) ** 2
+
+    # Apply mask and compute mean over valid targets for each sample
+    masked_squared_dists = squared_dists * masks
+    num_valid_per_sample = masks.sum(dim=1)  # (batch_size,)
+    mean_per_sample = masked_squared_dists.sum(dim=1) / num_valid_per_sample  # (batch_size,)
+
+    # Return mean over all samples
+    return mean_per_sample.mean()
 
 
 def train_predictor(
@@ -214,9 +257,10 @@ def train_predictor(
 ):
     data = torch.load(data_path)
     hidden_states = data["hidden_states"]
-    labels = data.get("labels")
-    if labels is None:
-        raise RuntimeError("Expected regression labels under key 'labels'.")
+    targets = data.get("targets")
+    masks = data.get("masks")
+    if targets is None or masks is None:
+        raise RuntimeError("Expected 'targets' and 'masks' in dataset.")
     token_choices = data["token_choices"]
 
     # split train/val
@@ -228,16 +272,18 @@ def train_predictor(
 
     perm = torch.randperm(total_n)
     hidden_states = hidden_states[perm]
-    labels = labels[perm]
+    targets = targets[perm]
+    masks = masks[perm]
 
     train_states, val_states = torch.split(hidden_states, [n_train, n_val])
-    train_labels, val_labels = torch.split(labels, [n_train, n_val])
+    train_targets, val_targets = torch.split(targets, [n_train, n_val])
+    train_masks, val_masks = torch.split(masks, [n_train, n_val])
 
     train_loader = DataLoader(
-        TensorDataset(train_states, train_labels), batch_size=batch_size, shuffle=True
+        TensorDataset(train_states, train_targets, train_masks), batch_size=batch_size, shuffle=True
     )
     val_loader = DataLoader(
-        TensorDataset(val_states, val_labels), batch_size=batch_size, shuffle=False
+        TensorDataset(val_states, val_targets, val_masks), batch_size=batch_size, shuffle=False
     )
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -262,18 +308,18 @@ def train_predictor(
     else:
         raise ValueError(f"Unsupported model_type: {model_type}")
 
-    criterion = nn.MSELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
     model.train()
     for epoch in range(num_epochs):
         total_loss = 0.0
-        for batch_states, batch_labels in train_loader:
+        for batch_states, batch_targets, batch_masks in train_loader:
             batch_states = batch_states.to(device)
-            batch_labels = batch_labels.to(device)
+            batch_targets = batch_targets.to(device)
+            batch_masks = batch_masks.to(device)
 
             preds = model(batch_states)
-            loss = criterion(preds, batch_labels)
+            loss = multi_target_mse_loss(preds, batch_targets, batch_masks)
 
             optimizer.zero_grad()
             loss.backward()
@@ -288,15 +334,19 @@ def train_predictor(
         correct = 0
         total = 0
         with torch.no_grad():
-            for batch_states, batch_labels in val_loader:
+            for batch_states, batch_targets, batch_masks in val_loader:
                 batch_states = batch_states.to(device)
-                batch_labels = batch_labels.to(device)
+                batch_targets = batch_targets.to(device)
+                batch_masks = batch_masks.to(device)
                 preds = model(batch_states)
-                loss = criterion(preds, batch_labels)
+                loss = multi_target_mse_loss(preds, batch_targets, batch_masks)
                 val_loss += loss.item()
+
+                # For validation accuracy, compare against mean of targets
+                target_means = (batch_targets * batch_masks).sum(dim=1) / batch_masks.sum(dim=1)
                 preds_rounded = preds.round()
-                correct += (preds_rounded == batch_labels.round()).sum().item()
-                total += batch_labels.numel()
+                correct += (preds_rounded == target_means.round()).sum().item()
+                total += batch_targets.size(0)
         val_loss = val_loss / max(1, len(val_loader))
         val_acc = correct / max(1, total)
         print(
