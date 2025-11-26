@@ -266,7 +266,7 @@ def main():
     parser.add_argument(
         "--coconut_ckpt",
         type=str,
-        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_12",
+        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
     )
     parser.add_argument("--model_id", type=str, default="openai-community/gpt2")
     parser.add_argument("--predictor_path", type=str, default="c_thought_predictor.pt")

@@ -6,7 +6,7 @@ Goal:
     predictor that selects the right number of latent tokens at inference time.
 
 Experiment Design:
-    1. Load checkpoint_12 (latest, seen all stages)
+    1. Load oracle checkpoint (default checkpoint_5)
     2. For each test question:
        - Try different c_thoughts values: [0, 2, 3, 4, 5, 6]
        - Pick the one that gives correct answer (smallest count wins)
@@ -235,7 +235,7 @@ def run_poc_experiment(
 
     Args:
         test_data_path: Path to GSM8k test data
-        checkpoint_12_path: Path to checkpoint_12 (last checkpoint)
+        checkpoint_12_path: Path to oracle checkpoint
         token_choices: Different c_thoughts values to try
         max_questions: Limit number of questions (for quick testing)
         device: Device to run on
@@ -269,16 +269,16 @@ def run_poc_experiment(
     print()
 
     # ========================================================================
-    # Checkpoint 12 with Oracle Token Selection
+    # Oracle checkpoint with token selection
     # ========================================================================
     print("=" * 80)
-    print("CHECKPOINT 12 + ORACLE TOKEN SELECTION")
+    print("ORACLE CHECKPOINT + TOKEN SELECTION")
     print("=" * 80)
     print(f"For each question, try all token choices {token_choices}")
     print(f"and pick the one that gives correct answer (if any).")
     print()
 
-    print(f"Loading checkpoint_12 from {checkpoint_12_path}...")
+    print(f"Loading oracle checkpoint from {checkpoint_12_path}...")
     model_12 = load_coconut_model(checkpoint_12_path, device=device)
     print()
 
@@ -289,7 +289,7 @@ def run_poc_experiment(
         "question_results": [],
     }
 
-    print("Evaluating checkpoint_12 with different token counts...")
+    print("Evaluating oracle checkpoint with different token counts...")
     for question_data in tqdm(test_data, desc="Questions"):
         question = question_data["question"]
         ground_truth = question_data["answer"].replace(",", "").strip()
@@ -406,8 +406,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--checkpoint_12",
         type=str,
-        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_12",
-        help="Path to checkpoint_12",
+        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
+        help="Path to oracle checkpoint (default checkpoint_5)",
     )
     parser.add_argument(
         "--token_choices",

@@ -151,8 +151,8 @@ def collect_hidden_states_and_labels(
     (hidden_state, c_thoughts_left) pairs along the latent sequence.
 
     Strategy:
-    - Define optimal_total = average of correct tokens (if multiple).
-    - For each integer step k in [0, floor(optimal_total)-1], get hidden state after k latents
+    - Define optimal_total = minimal correct tokens (most efficient).
+    - For each integer step k in [0, optimal_total-1], get hidden state after k latents
       (i.e., before latent k+1) and pair with label = optimal_total - k.
     """
     model, tokenizer, special_tokens = load_coconut_model(checkpoint_path, model_id, device)
@@ -176,13 +176,12 @@ def collect_hidden_states_and_labels(
         if len(correct_tokens) == 0:
             continue  # skip if no oracle label
 
-        optimal_total = sum(correct_tokens) / len(correct_tokens)  # average of valid tokens
+        optimal_total = min(correct_tokens)  # minimal valid tokens
         question_tokens = tokenizer.encode(item["question"] + "\n", add_special_tokens=True)
 
-        max_int_step = int(optimal_total)
-        for k in range(max_int_step):
+        for k in range(optimal_total):
             # Store all correct lengths shifted by k
-            targets_at_k = [float(c - k) for c in correct_tokens]
+            targets_at_k = [float(c - k) for c in correct_tokens if (c - k) > 0]
             hidden_state = get_prefix_hidden_state(
                 model, tokenizer, question_tokens, special_tokens, device, n_latents_prefix=k
             )
@@ -392,7 +391,7 @@ def main():
     parser.add_argument(
         "--checkpoint_path",
         type=str,
-        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_12",
+        default="pretrained_checkpoints/stage_1_training_ck/checkpoint_5",
     )
     parser.add_argument("--model_id", type=str, default="openai-community/gpt2")
     parser.add_argument("--poc_results", type=str, default="poc_experiment_results.json")
