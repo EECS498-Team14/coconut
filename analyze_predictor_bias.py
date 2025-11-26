@@ -209,8 +209,9 @@ def analyze_predictions(
                     n_latents_prefix=k_latents,
                 )
                 val = predictor(hs.unsqueeze(0)).item()
+                val_int = max(0, int(round(val)))
             step_pred_values.append(val)
-            if val <= 0:
+            if val_int <= 1:
                 break
             k_latents += 1
 

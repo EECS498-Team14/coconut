@@ -244,7 +244,8 @@ def evaluate(
                     n_latents_prefix=k_latents,
                 )
                 pred_remaining = predictor(hs.unsqueeze(0)).item()
-            if pred_remaining <= 0:
+                pred_remaining_int = max(0, int(round(pred_remaining)))
+            if pred_remaining_int <= 1:
                 break
             k_latents += 1
 
