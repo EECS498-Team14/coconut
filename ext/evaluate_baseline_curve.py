@@ -28,6 +28,7 @@ def evaluate_baseline_curve(
     output_path: str,
     token_counts: list = [0, 1, 2, 3, 4, 5, 6],
     device: str = "cuda",
+    model_id: str = "openai-community/gpt2",
 ):
     """
     Evaluate baseline curve with fixed token counts.
@@ -45,10 +46,10 @@ def evaluate_baseline_curve(
 
     # Load model
     print(f"\nLoading Coconut model from {coconut_checkpoint}...")
-    coconut_model = load_coconut_model(coconut_checkpoint, device=device)
+    coconut_model = load_coconut_model(coconut_checkpoint, model_id=model_id, device=device)
 
     # Setup tokenizer
-    tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.add_tokens("<|start-latent|>")
     tokenizer.add_tokens("<|end-latent|>")
@@ -170,6 +171,12 @@ def main():
         default=None,
         help="Device (cuda/cpu)",
     )
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="openai-community/gpt2",
+        help="Base model ID (e.g., openai-community/gpt2, meta-llama/Llama-2-7b-hf)",
+    )
 
     args = parser.parse_args()
 
@@ -183,6 +190,7 @@ def main():
         test_data_path=args.test_data,
         output_path=args.output_path,
         device=device,
+        model_id=args.model_id,
     )
 
 

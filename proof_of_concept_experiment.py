@@ -229,6 +229,7 @@ def run_poc_experiment(
     token_choices: List[int] = [0, 2, 3, 4, 5, 6],
     max_questions: int = None,
     device: str = "cuda",
+    model_id: str = "openai-community/gpt2",
 ):
     """
     Main proof-of-concept experiment.
@@ -253,8 +254,8 @@ def run_poc_experiment(
     print()
 
     # Setup tokenizer and special tokens
-    print("Setting up tokenizer and special tokens...")
-    tokenizer = AutoTokenizer.from_pretrained("openai-community/gpt2")
+    print(f"Setting up tokenizer and special tokens (model_id={model_id})...")
+    tokenizer = AutoTokenizer.from_pretrained(model_id)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.add_tokens("<|start-latent|>")
     tokenizer.add_tokens("<|end-latent|>")
@@ -279,7 +280,7 @@ def run_poc_experiment(
     print()
 
     print(f"Loading checkpoint_12 from {checkpoint_12_path}...")
-    model_12 = load_coconut_model(checkpoint_12_path, device=device)
+    model_12 = load_coconut_model(checkpoint_12_path, model_id=model_id, device=device)
     print()
 
     results_12_oracle = {
@@ -422,6 +423,12 @@ if __name__ == "__main__":
         help="Limit number of questions for quick testing",
     )
     parser.add_argument("--device", type=str, default="cuda", help="Device to run on")
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="openai-community/gpt2",
+        help="Base model ID (e.g., openai-community/gpt2, meta-llama/Llama-2-7b-hf)",
+    )
 
     args = parser.parse_args()
 
@@ -433,4 +440,5 @@ if __name__ == "__main__":
         token_choices=token_choices,
         max_questions=args.max_questions,
         device=args.device,
+        model_id=args.model_id,
     )
