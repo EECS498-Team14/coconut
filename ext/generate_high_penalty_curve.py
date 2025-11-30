@@ -18,6 +18,7 @@ def train_and_evaluate_predictor(
     output_dir: str,
     coconut_checkpoint: str,
     test_data: str,
+    model_id: str = "openai-community/gpt2",
 ):
     """Train predictor with given token_penalty and evaluate."""
 
@@ -58,6 +59,7 @@ def train_and_evaluate_predictor(
         "--coconut_checkpoint", coconut_checkpoint,
         "--test_data", test_data,
         "--strategy", "argmax",
+        "--model_id", model_id,
     ]
 
     # Capture output to parse results
@@ -119,6 +121,7 @@ def generate_high_penalty_curve(
     test_data: str,
     token_penalty_values: list,
     output_path: str,
+    model_id: str = "openai-community/gpt2",
 ):
     """Generate predictor curve with high penalties."""
 
@@ -139,6 +142,7 @@ def generate_high_penalty_curve(
             output_dir=output_dir,
             coconut_checkpoint=coconut_checkpoint,
             test_data=test_data,
+            model_id=model_id,
         )
         results["points"].append(point)
 
@@ -210,6 +214,12 @@ def main():
         default="0.30,0.40,0.50,0.60,0.80,1.00",
         help="Comma-separated high token penalty values",
     )
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="openai-community/gpt2",
+        help="Base model ID (e.g., openai-community/gpt2, meta-llama/Llama-2-7b-hf)",
+    )
 
     args = parser.parse_args()
 
@@ -222,6 +232,7 @@ def main():
         test_data=args.test_data,
         token_penalty_values=token_penalty_values,
         output_path=args.output_path,
+        model_id=args.model_id,
     )
 
 
