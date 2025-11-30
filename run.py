@@ -432,7 +432,8 @@ def main():
         pbar = tqdm(
             colour="blue", desc=f"Test Accuracy", total=total_length, dynamic_ncols=True
         )
-        cor, cor_cot, total = (
+        cor, cor_cot, total, total_tokens_generated = (
+            torch.tensor(0, device=rank),
             torch.tensor(0, device=rank),
             torch.tensor(0, device=rank),
             torch.tensor(0, device=rank),
@@ -458,11 +459,16 @@ def main():
                 total += 1
 
                 # synced_gpus=True in FSDP mode, as we need to keep # forward pass the same on each device
+                input_length = batch["input_ids"].shape[1]
                 outputs = parallel_model.module.generate(
                     **batch,
                     max_new_tokens=max_new_tokens,
                     synced_gpus=not configs.only_eval,
                 )
+
+                # Count number of tokens generated (output length - input length)
+                tokens_generated = outputs.shape[1] - input_length
+                total_tokens_generated += tokens_generated
 
                 text_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
                 answer_output = text_output.split("#")[-1].replace(",", "").strip()
@@ -492,19 +498,25 @@ def main():
         dist.all_reduce(cor_cot, op=dist.ReduceOp.SUM)
         dist.all_reduce(cor, op=dist.ReduceOp.SUM)
         dist.all_reduce(total, op=dist.ReduceOp.SUM)
+        dist.all_reduce(total_tokens_generated, op=dist.ReduceOp.SUM)
 
         cor_cot = cor_cot.item()
         cor = cor.item()
         total = total.item()
+        total_tokens_generated = total_tokens_generated.item()
+        avg_tokens_generated = total_tokens_generated / total if total > 0 else 0
         if rank == 0:
             print(f"Accuracy on validation set: {cor} / {total} = {cor / total}")
             print(
                 f"CoT match on validation set: {cor_cot} / {total} = {cor_cot / total}"
             )
+            print(
+                f"Avg tokens generated: {total_tokens_generated} / {total} = {avg_tokens_generated:.2f}"
+            )
         sys.stdout.flush()
 
         if wandb_run:
-            wandb_run.log({"eval/acc": cor / total, "eval/cot_em": cor_cot / total})
+            wandb_run.log({"eval/acc": cor / total, "eval/cot_em": cor_cot / total, "eval/avg_tokens_generated": avg_tokens_generated})
 
         if configs.only_eval:
             break
