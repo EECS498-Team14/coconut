@@ -62,12 +62,6 @@ Accuracy on validation set: 304 / 1319 = 0.2304776345716452
 CoT match on validation set: 0 / 1319 = 0.0
 Avg tokens generated: 30088 / 1319 = 22.81
 
----
-
-Accuracy on validation set: 248 / 1319 = 0.18802122820318423
-CoT match on validation set: 0 / 1319 = 0.0
-Avg tokens generated: 28774 / 1319 = 21.82
-
 ## ProsQA
 
 Run for 25 epochs (paper runs for 50 epochs)
