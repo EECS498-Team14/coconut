@@ -10,7 +10,6 @@ token_penalty values, as it requires only one training run.
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -53,6 +52,7 @@ def evaluate_with_bias(
     bias_weight: float,
     coconut_checkpoint: str,
     test_data: str,
+    model_id: str = "openai-community/gpt2",
 ):
     """Evaluate predictor with given bias_weight."""
 
@@ -67,6 +67,7 @@ def evaluate_with_bias(
         "--test_data", test_data,
         "--strategy", "biased",
         "--bias_weight", str(bias_weight),
+        "--model_id", model_id,
     ]
 
     # Capture output to parse results
@@ -82,10 +83,14 @@ def evaluate_with_bias(
         print(f"\nERROR: Evaluation failed with return code {result.returncode}")
         sys.exit(1)
 
-    # Parse accuracy and token distribution (same logic as generate_predictor_curve.py)
+    # Parse accuracy, token distribution, avg tokens generated, and avg total tokens
     output_lines = result.stdout.split("\n")
     accuracy = None
     token_dist = {}
+    avg_latent_tokens = None
+    avg_tokens_generated = None
+    avg_total_tokens = None
+    avg_total_tokens_correct = None
 
     for line in output_lines:
         # Match lines like: "Accuracy: 431/1319 = 32.68%"
@@ -93,6 +98,25 @@ def evaluate_with_bias(
             match = re.search(r'=\s*([\d.]+)%', line)
             if match:
                 accuracy = float(match.group(1)) / 100
+        # Match lines like: "Avg latent tokens: 5.23"
+        elif "Avg latent tokens:" in line:
+            match = re.search(r'Avg latent tokens:\s*([\d.]+)', line)
+            if match:
+                avg_latent_tokens = float(match.group(1))
+        # Match lines like: "Avg tokens generated: 45.23"
+        elif "Avg tokens generated:" in line:
+            match = re.search(r'Avg tokens generated:\s*([\d.]+)', line)
+            if match:
+                avg_tokens_generated = float(match.group(1))
+        # Match lines like: "Avg total tokens: 50.46"
+        elif "Avg total tokens (correct only):" in line:
+            match = re.search(r'Avg total tokens \(correct only\):\s*([\d.]+)', line)
+            if match:
+                avg_total_tokens_correct = float(match.group(1))
+        elif "Avg total tokens:" in line:
+            match = re.search(r'Avg total tokens:\s*([\d.]+)', line)
+            if match:
+                avg_total_tokens = float(match.group(1))
         # Match lines like: "  6 tokens: 1305 (98.9%)"
         elif "tokens:" in line and "(" in line:
             parts = line.strip().split()
@@ -104,21 +128,32 @@ def evaluate_with_bias(
                 except (ValueError, IndexError):
                     pass
 
-    # Compute average tokens
-    total = sum(token_dist.values())
-    avg_tokens = sum(tok * count for tok, count in token_dist.items()) / total if total > 0 else 0
+    # Compute average latent tokens if not already parsed
+    if avg_latent_tokens is None:
+        total = sum(token_dist.values())
+        avg_latent_tokens = sum(tok * count for tok, count in token_dist.items()) / total if total > 0 else 0
+
+    # Compute total tokens if not already parsed
+    if avg_total_tokens is None and avg_latent_tokens is not None and avg_tokens_generated is not None:
+        avg_total_tokens = avg_latent_tokens + avg_tokens_generated
 
     print(f"\n{'='*80}")
     print(f"RESULTS FOR BIAS_WEIGHT={bias_weight:+.3f}")
     print(f"{'='*80}")
     print(f"  Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
-    print(f"  Avg Tokens: {avg_tokens:.2f}")
+    print(f"  Avg Latent Tokens: {avg_latent_tokens:.2f}")
+    print(f"  Avg Tokens Generated: {avg_tokens_generated:.2f}")
+    print(f"  Avg Total Tokens: {avg_total_tokens:.2f}")
+    print(f"  Avg Total Tokens (Correct): {avg_total_tokens_correct:.2f}")
     print(f"{'='*80}\n")
 
     return {
         "bias_weight": bias_weight,
         "accuracy": accuracy,
-        "avg_tokens": avg_tokens,
+        "avg_tokens": avg_latent_tokens,
+        "avg_tokens_generated": avg_tokens_generated,
+        "avg_total_tokens": avg_total_tokens,
+        "avg_total_tokens_correct": avg_total_tokens_correct,
         "token_distribution": token_dist,
     }
 
@@ -131,6 +166,7 @@ def generate_biased_curve(
     bias_weight_values: list,
     output_path: str,
     train_predictor: bool = True,
+    model_id: str = "openai-community/gpt2",
 ):
     """Generate predictor curve using test-time logit biasing."""
 
@@ -156,6 +192,7 @@ def generate_biased_curve(
             bias_weight=bias_weight,
             coconut_checkpoint=coconut_checkpoint,
             test_data=test_data,
+            model_id=model_id,
         )
         results["points"].append(point)
 
@@ -173,13 +210,14 @@ def generate_biased_curve(
     print("SUMMARY")
     print(f"{'='*80}\n")
 
-    print(f"{'Bias Weight':<14} {'Avg Tokens':<12} {'Accuracy':<10}")
-    print("-" * 36)
+    print(f"{'Bias Weight':<14} {'Accuracy':<10} {'Total (All)':<12} {'Total (Correct)':<15}")
+    print("-" * 51)
     for point in results["points"]:
         print(
             f"{point['bias_weight']:+.3f}          "
-            f"{point['avg_tokens']:<12.2f} "
-            f"{point['accuracy']:<10.4f}"
+            f"{point['accuracy']:<10.4f} "
+            f"{point['avg_total_tokens']:<12.2f} "
+            f"{point['avg_total_tokens_correct']:<15.2f}"
         )
 
     print(f"\n{'='*80}\n")
@@ -232,6 +270,12 @@ def main():
         action="store_true",
         help="Skip training and use existing predictor checkpoint",
     )
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="openai-community/gpt2",
+        help="Base model ID (e.g., openai-community/gpt2, meta-llama/Llama-2-7b-hf)",
+    )
 
     args = parser.parse_args()
 
@@ -245,6 +289,7 @@ def main():
         bias_weight_values=bias_weight_values,
         output_path=args.output_path,
         train_predictor=not args.skip_training,
+        model_id=args.model_id,
     )
 
 

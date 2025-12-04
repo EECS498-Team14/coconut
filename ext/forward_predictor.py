@@ -229,6 +229,38 @@ class MultiTargetPredictor(nn.Module):
 
             return predictions
 
+    def predict_biased(self, hidden_states, bias_weight=0.0):
+        """
+        Predict token count with logit biasing to control accuracy-token tradeoff.
+
+        Applies linear bias to logits before taking argmax:
+            logits_biased = logits + bias_weight * torch.arange(num_classes)
+
+        Args:
+            hidden_states: (batch_size, hidden_dim)
+            bias_weight: Bias strength for controlling tradeoff
+                - bias_weight > 0: Favors higher tokens (more accuracy, more cost)
+                - bias_weight < 0: Favors lower tokens (less accuracy, less cost)
+                - bias_weight = 0: Equivalent to argmax (no bias)
+
+        Returns:
+            predictions: (batch_size,) - predicted token count
+        """
+        with torch.no_grad():
+            logits = self.forward(hidden_states)  # (batch_size, num_classes)
+
+            # Create bias vector: [0, 1, 2, 3, 4, 5, 6]
+            token_indices = torch.arange(
+                self.num_classes,
+                dtype=logits.dtype,
+                device=logits.device
+            )
+
+            # Apply linear bias
+            biased_logits = logits + bias_weight * token_indices
+
+            return biased_logits.argmax(dim=-1)
+
 
 class ResidualBlock(nn.Module):
     """
@@ -357,6 +389,38 @@ class ResNetPredictor(nn.Module):
                     predictions[i] = baseline_token
 
             return predictions
+
+    def predict_biased(self, hidden_states, bias_weight=0.0):
+        """
+        Predict token count with logit biasing to control accuracy-token tradeoff.
+
+        Applies linear bias to logits before taking argmax:
+            logits_biased = logits + bias_weight * torch.arange(num_classes)
+
+        Args:
+            hidden_states: (batch_size, hidden_dim)
+            bias_weight: Bias strength for controlling tradeoff
+                - bias_weight > 0: Favors higher tokens (more accuracy, more cost)
+                - bias_weight < 0: Favors lower tokens (less accuracy, less cost)
+                - bias_weight = 0: Equivalent to argmax (no bias)
+
+        Returns:
+            predictions: (batch_size,) - predicted token count
+        """
+        with torch.no_grad():
+            logits = self.forward(hidden_states)  # (batch_size, num_classes)
+
+            # Create bias vector: [0, 1, 2, 3, 4, 5, 6]
+            token_indices = torch.arange(
+                self.num_classes,
+                dtype=logits.dtype,
+                device=logits.device
+            )
+
+            # Apply linear bias
+            biased_logits = logits + bias_weight * token_indices
+
+            return biased_logits.argmax(dim=-1)
 
 
 class TransformerPredictor(nn.Module):
@@ -510,6 +574,38 @@ class TransformerPredictor(nn.Module):
                     predictions[i] = baseline_token
 
             return predictions
+
+    def predict_biased(self, hidden_states, bias_weight=0.0):
+        """
+        Predict token count with logit biasing to control accuracy-token tradeoff.
+
+        Applies linear bias to logits before taking argmax:
+            logits_biased = logits + bias_weight * torch.arange(num_classes)
+
+        Args:
+            hidden_states: (batch_size, hidden_dim)
+            bias_weight: Bias strength for controlling tradeoff
+                - bias_weight > 0: Favors higher tokens (more accuracy, more cost)
+                - bias_weight < 0: Favors lower tokens (less accuracy, less cost)
+                - bias_weight = 0: Equivalent to argmax (no bias)
+
+        Returns:
+            predictions: (batch_size,) - predicted token count
+        """
+        with torch.no_grad():
+            logits = self.forward(hidden_states)  # (batch_size, num_classes)
+
+            # Create bias vector: [0, 1, 2, 3, 4, 5, 6]
+            token_indices = torch.arange(
+                self.num_classes,
+                dtype=logits.dtype,
+                device=logits.device
+            )
+
+            # Apply linear bias
+            biased_logits = logits + bias_weight * token_indices
+
+            return biased_logits.argmax(dim=-1)
 
 
 def create_multi_target_predictor(
