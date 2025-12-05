@@ -1,5 +1,48 @@
 # Coconut
 
+## Replication & Extension: Adaptive Latent Reasoning Steps
+
+This repository contains our replication and extension of the COCONUT framework, conducted as part of EECS 498-006 at the University of Michigan.
+
+**Authors:** Xiayang Jin, Xinzhe Juan, Weiyi Wang, Haoran Zhang
+
+For the full details, see our [report](report.pdf).
+
+### Overview
+
+We replicate COCONUT on GPT-2 (124M) across GSM8k, ProntoQA, and ProsQA, and probe its architectural limits by scaling down to Pythia-14m. We also propose an **adaptive latent-length controller** that dynamically predicts the optimal number of latent reasoning steps per query.
+
+### Key Contributions
+
+1. **Replication on GPT-2**: Largely confirmed COCONUT's core claims—75-84% token reduction across benchmarks with comparable or superior accuracy on planning tasks (ProsQA).
+
+2. **Capacity Analysis with Pythia-14m**: Revealed sharp capacity dependence in latent reasoning. While planning tasks (ProsQA) still benefit (+10.8pp over CoT), arithmetic (GSM8k) completely fails at this scale, suggesting a minimum model capacity threshold.
+
+3. **Adaptive Latent-Length Controller**: Proposed a lightweight 3-layer MLP that predicts per-question latent depth from the question's hidden state. Oracle analysis shows optimal step selection could raise GSM8k accuracy from 70.3% → 80.5%.
+
+### Main Results
+
+| Dataset | Method | Accuracy (Ours) | Accuracy (Paper) | Token Reduction |
+|---------|--------|-----------------|------------------|-----------------|
+| ProntoQA | COCONUT | 99.9% | 99.8% | ~75% |
+| ProsQA | COCONUT | 94.4% | 97.0% | ~72% |
+| GSM8k | COCONUT | 23.0% | 34.1% | ~30% |
+
+*Note: GSM8k underperformance is due to reduced training epochs (1-3 vs. 25 in original).*
+
+### Extension: Adaptive Predictor
+
+Our predictor enables:
+- **Better accuracy** than fixed-step COCONUT across different latent reasoning budgets
+- **Continuous control** over latent compute via test-time logit bias (κ parameter)
+- **Ahead-of-time prediction** before reasoning begins, allowing resource pre-allocation
+
+*See Figure 4 in [report.pdf](report.pdf) for detailed accuracy vs. latent step plots.*
+
+---
+
+## Original COCONUT Paper
+
 The code base is the official implementation of [Training Large Language Models to Reason in a Continuous Latent Space](https://arxiv.org/abs/2412.06769).
 
 ![coconut](assets/coconut.png)
